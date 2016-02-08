@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "removeComments": true,
+    "sourceMap": true,
+    "out": "JS/MATHIS.js",
+    "declaration":false
+  }
+}
