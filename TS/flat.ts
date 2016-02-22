@@ -8,7 +8,7 @@ module mathis{
 
 
 
-        export enum StickingMode{simple,inverse,none,decay}
+        export enum StickingMode{simple,inverse,none}
 
         export class Rectangle{
             nbX=4
@@ -26,7 +26,11 @@ module mathis{
 
             borderStickingVertical=StickingMode.none
             borderStickingHorizontal=StickingMode.none
-            decay=1
+
+            nbVerticalDecays=0
+            nbHorizontalDecays=0
+
+
 
 
             holeParameters= new Array<XYZ>()
@@ -41,198 +45,245 @@ module mathis{
 
             }
 
-
-            public stickingFunction: (i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number} =null
+            //
+            //public stickingFunction: (i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number} =null
 
 
             constructor( mamesh:Mamesh){
                 this.mamesh=mamesh
             }
 
-
-            private buildStickingFunction(verticalMode:StickingMode,horizontalMode:StickingMode):(i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number}{
-
-                let resFunction=null
-
-
-                if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.simple  ){
-
-                    resFunction= (i,j,nbX,nbY)=>{
-                        let iRes=null
-                        let jRes=null
-
-                        if (i==-1) iRes=nbX-1
-                        else if (i==nbX) iRes=0
-                        else if (i>=0 && i<nbX) iRes=i
-
-                        if (j==-1) jRes=nbY-1
-                        else if (j==nbY) jRes=0
-                        else if (j>=0 && j<nbY) jRes=j
-
-                        return {i:iRes,j:jRes}
-
-                    }
-
-                }
-                else if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.none  ){
-
-                    resFunction= (i,j,nbX,nbY)=>{
-                        let iRes=null
-                        let jRes=null
-
-                        if (j>=0 && j<nbY) jRes=j
-
-                        if (i==-1) iRes=nbX-1
-                        else if (i==nbX) iRes=0
-                        else if (i>=0 && i<nbX) iRes=i
-
-                        return {i:iRes,j:jRes}
-
-                    }
-
-                }
-
-                else if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.inverse  ){
-
-                    resFunction= (i,j,nbX,nbY)=>{
-                        let iRes=null
-                        let jRes=null
-
-                        if (j>=0 && j<nbY){
-
-                            if (i==-1) iRes=nbX-1
-                            else if (i==nbX) iRes=0
-                            else if (i>=0 && i<nbX) iRes=i
-                        }
-
-                        else {
-
-                            if (j==-1){
-                                jRes=nbY-1
-
-                                if (i<=-1) iRes=null
-                                else if (i>=nbX) iRes=null
-                                else iRes= nbX-1-i
-                            }
-                            else if (j==nbY){
-                                jRes=0
-                                if (i<=-1) iRes=null
-                                else if (i>=nbX) iRes=null
-                                else iRes= nbX-1-i
-                            }
-
-                        }
-
-
-                        return {i:iRes,j:jRes}
-
-                    }
-
-                }
-                else if (verticalMode==StickingMode.none && horizontalMode==StickingMode.inverse  ){
-
-                    resFunction= (i,j,nbX,nbY)=>{
-                        let iRes=null
-                        let jRes=null
-
-                        if (j>=0 && j<nbY && i>=0 && i<nbX  ){
-                                iRes=i
-                                jRes=j
-                        }
-                        else {
-
-                            if (j==-1){
-                                jRes=nbY-1
-
-                                if (i<=-1) iRes=null
-                                else if (i>=nbX) iRes=null
-                                else iRes= nbX-1-i
-                            }
-                            else if (j==nbY){
-                                jRes=0
-                                if (i<=-1) iRes=null
-                                else if (i>=nbX) iRes=null
-                                else iRes= nbX-1-i
-                            }
-
-                        }
-
-
-                        return {i:iRes,j:jRes}
-
-                    }
-
-                }
-                else if (verticalMode==StickingMode.none && horizontalMode==StickingMode.none  ){
-                    resFunction= (i,j,nbX,nbY)=> {
-                        let iRes = null
-                        let jRes = null
-
-                        if (j >= 0 && j < nbY) {
-                            if (i >= 0 && i < nbX) {
-                                iRes = i
-                                jRes = j
-                            }
-                        }
-                        return {i:iRes,j:jRes}
-                    }
-                }
-
-                else if (verticalMode==StickingMode.decay && horizontalMode==StickingMode.none  ){
-                    resFunction= (i,j,nbX,nbY)=> {
-                        let iRes = null
-                        let jRes = null
-
-                        if (j >= 0 && j < nbY && i >= 0 && i < nbX) {
-                                iRes = i
-                                jRes = j
-
-                        }
-                        else if (i==-1){
-                            if (j>=1 && j<nbY){
-                                iRes=nbX-1
-                                jRes=j-1
-                            }
-                        }
-                        else if (i==nbX){
-                            if (j>=0 && j<nbY-1){
-                                iRes=0
-                                jRes=j+1
-                            }
-                        }
-
-
-                        return {i:iRes,j:jRes}
-                    }
-                }
-
-
-
-                    return resFunction
-            }
+            //
+            //private buildStickingFunction():(i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number}{
+            //
+            //    let resFunction= (i,j,nbX,nbY)=>{
+            //        let iRes=null
+            //        let jRes=null
+            //
+            //        if (j>=0 && j<nbY && i>=0 && i<nbX  ){
+            //            iRes=i
+            //            jRes=j
+            //            return {i:iRes,j:jRes}
+            //        }
+            //
+            //        if (this.borderStickingVertical==StickingMode.simple){
+            //
+            //            if (i==-1){
+            //                iRes=nbX-1
+            //                jRes=modulo(j,nbY)
+            //            }
+            //
+            //
+            //        }
+            //
+            //
+            //
+            //
+            //
+            //
+            //
+            //        if (i==-1) iRes=nbX-1
+            //        else if (i==nbX) iRes=0
+            //        else if (i>=0 && i<nbX) iRes=i
+            //
+            //        if (j==-1) jRes=nbY-1
+            //        else if (j==nbY) jRes=0
+            //        else if (j>=0 && j<nbY) jRes=j
+            //
+            //        return {i:iRes,j:jRes}
+            //
+            //    }
+            //
+            //
+            //    return resFunction
+            //
+            //
+            //}
+            //
+            //
+            //private buildStickingFunction(verticalMode:StickingMode,horizontalMode:StickingMode):(i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number}{
+            //
+            //    let resFunction=null
+            //
+            //
+            //    if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.simple  ){
+            //
+            //        resFunction= (i,j,nbX,nbY)=>{
+            //            let iRes=null
+            //            let jRes=null
+            //
+            //            if (i==-1) iRes=nbX-1
+            //            else if (i==nbX) iRes=0
+            //            else if (i>=0 && i<nbX) iRes=i
+            //
+            //            if (j==-1) jRes=nbY-1
+            //            else if (j==nbY) jRes=0
+            //            else if (j>=0 && j<nbY) jRes=j
+            //
+            //            return {i:iRes,j:jRes}
+            //
+            //        }
+            //
+            //    }
+            //    else if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.none  ){
+            //
+            //        resFunction= (i,j,nbX,nbY)=>{
+            //            let iRes=null
+            //            let jRes=null
+            //
+            //            if (j>=0 && j<nbY) jRes=j
+            //
+            //            if (i==-1) iRes=nbX-1
+            //            else if (i==nbX) iRes=0
+            //            else if (i>=0 && i<nbX) iRes=i
+            //
+            //            return {i:iRes,j:jRes}
+            //
+            //        }
+            //
+            //    }
+            //
+            //    else if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.inverse  ){
+            //
+            //        resFunction= (i,j,nbX,nbY)=>{
+            //            let iRes=null
+            //            let jRes=null
+            //
+            //            if (j>=0 && j<nbY){
+            //
+            //                if (i==-1) iRes=nbX-1
+            //                else if (i==nbX) iRes=0
+            //                else if (i>=0 && i<nbX) iRes=i
+            //            }
+            //
+            //            else {
+            //
+            //                if (j==-1){
+            //                    jRes=nbY-1
+            //
+            //                    if (i<=-1) iRes=null
+            //                    else if (i>=nbX) iRes=null
+            //                    else iRes= nbX-1-i
+            //                }
+            //                else if (j==nbY){
+            //                    jRes=0
+            //                    if (i<=-1) iRes=null
+            //                    else if (i>=nbX) iRes=null
+            //                    else iRes= nbX-1-i
+            //                }
+            //
+            //            }
+            //
+            //
+            //            return {i:iRes,j:jRes}
+            //
+            //        }
+            //
+            //    }
+            //    else if (verticalMode==StickingMode.none && horizontalMode==StickingMode.inverse  ){
+            //
+            //        resFunction= (i,j,nbX,nbY)=>{
+            //            let iRes=null
+            //            let jRes=null
+            //
+            //            if (j>=0 && j<nbY && i>=0 && i<nbX  ){
+            //                    iRes=i
+            //                    jRes=j
+            //            }
+            //            else {
+            //
+            //                if (j==-1){
+            //                    jRes=nbY-1
+            //
+            //                    if (i<=-1) iRes=null
+            //                    else if (i>=nbX) iRes=null
+            //                    else iRes= nbX-1-i
+            //                }
+            //                else if (j==nbY){
+            //                    jRes=0
+            //                    if (i<=-1) iRes=null
+            //                    else if (i>=nbX) iRes=null
+            //                    else iRes= nbX-1-i
+            //                }
+            //
+            //            }
+            //
+            //
+            //            return {i:iRes,j:jRes}
+            //
+            //        }
+            //
+            //    }
+            //    else if (verticalMode==StickingMode.none && horizontalMode==StickingMode.none  ){
+            //        resFunction= (i,j,nbX,nbY)=> {
+            //            let iRes = null
+            //            let jRes = null
+            //
+            //            if (j >= 0 && j < nbY) {
+            //                if (i >= 0 && i < nbX) {
+            //                    iRes = i
+            //                    jRes = j
+            //                }
+            //            }
+            //            return {i:iRes,j:jRes}
+            //        }
+            //    }
+            //
+            //    //else if (verticalMode==StickingMode.decay && horizontalMode==StickingMode.none  ){
+            //    //    resFunction= (i,j,nbX,nbY)=> {
+            //    //        let iRes = null
+            //    //        let jRes = null
+            //    //
+            //    //        if (j >= 0 && j < nbY && i >= 0 && i < nbX) {
+            //    //                iRes = i
+            //    //                jRes = j
+            //    //
+            //    //        }
+            //    //        else if (i==-1){
+            //    //            if (j>=1 && j<nbY){
+            //    //                iRes=nbX-1
+            //    //                jRes=j-1
+            //    //            }
+            //    //        }
+            //    //        else if (i==nbX){
+            //    //            if (j>=0 && j<nbY-1){
+            //    //                iRes=0
+            //    //                jRes=j+1
+            //    //            }
+            //    //        }
+            //    //
+            //    //
+            //    //        return {i:iRes,j:jRes}
+            //    //    }
+            //    //}
+            //
+            //
+            //
+            //        return resFunction
+            //}
 
 
             superGo(){
 
 
-                let sticking=this.buildStickingFunction(this.borderStickingVertical,this.borderStickingHorizontal)
-
-                if (sticking!=null) {
-                    this.stickingFunction=sticking
-
-                }
-                else {
-
-
-                    sticking=this.buildStickingFunction(this.borderStickingHorizontal,this.borderStickingVertical)
-
-                    if (sticking!=null) this.stickingFunction= (i,j,nbX,nbY)=>{
-                        let res=sticking(j,i,nbY,nbX)
-                        return {i:res.j,j:res.i}
-                    }
-                    else throw 'this combinaison of border sticking mode is impossible'
-
-                }
+                //let sticking=this.buildStickingFunction(this.borderStickingVertical,this.borderStickingHorizontal)
+                //
+                //if (sticking!=null) {
+                //    this.stickingFunction=sticking
+                //
+                //}
+                //else {
+                //
+                //
+                //    sticking=this.buildStickingFunction(this.borderStickingHorizontal,this.borderStickingVertical)
+                //
+                //    if (sticking!=null) this.stickingFunction= (i,j,nbX,nbY)=>{
+                //        let res=sticking(j,i,nbY,nbX)
+                //        return {i:res.j,j:res.i}
+                //    }
+                //    else throw 'this combinaison of border sticking mode is impossible'
+                //
+                //}
 
 
 
@@ -275,10 +326,33 @@ module mathis{
                 //}
 
 
-                let ijRes=this.stickingFunction(i,j,this.nbX,this.nbY)
+                //let ijRes=this.stickingFunction(i,j,this.nbX,this.nbY)
+
+                let iRes=null
+                let jRes=null
+                if (this.borderStickingVertical!=StickingMode.inverse&& this.borderStickingHorizontal!=StickingMode.inverse){
+                    if (this.borderStickingVertical==StickingMode.none) iRes=i
+                    else if (this.borderStickingVertical==StickingMode.simple) iRes=modulo(i,this.nbX)
+
+                    if (this.borderStickingHorizontal==StickingMode.none) jRes=j
+                    else if (this.borderStickingHorizontal==StickingMode.simple) jRes=modulo(j,this.nbY)
+                }
+                else if (this.borderStickingVertical==StickingMode.inverse && this.borderStickingHorizontal==StickingMode.none){
+                    if (i<0 || i>=this.nbX){
+                        iRes=modulo(i,this.nbX)
+                        jRes=this.nbY -1 - j
+                    }
+                    else {
+                        iRes=i
+                        jRes=j
+                    }
+                }
 
 
-                return this.paramToVertex[ijRes.i+','+ijRes.j]
+
+
+
+                return this.paramToVertex[iRes+','+jRes]
 
             }
 
@@ -361,11 +435,14 @@ module mathis{
 
                                 let leftDecayForOddLines = ( j % 2 == 1) ? 0.5 * deltaX : 0;
 
+                                let currentVertDecay= (this.nbVerticalDecays==0)? 0 : i*deltaX/(this.maxX-this.minX)*this.nbVerticalDecays*deltaY
+
+
                                 let vertex = graphManip.addNewVertex(this.mamesh.vertices, cellId)
                                 vertex.param = param
                                 vertex.position = basic.newXYZ(
-                                    positionPerhapsModulo(i * deltaX - leftDecayForOddLines) + this.minX,
-                                    (j * deltaY + this.minY),
+                                    i * deltaX - leftDecayForOddLines + this.minX,
+                                    (j * deltaY + this.minY)+currentVertDecay,
                                     0)
                                 this.paramToVertex[i + ',' + j] = vertex
 
@@ -392,7 +469,6 @@ module mathis{
             private linksCreation(){
 
 
-                var checkExistingLinks=(this.borderStickingHorizontal!=StickingMode.none) || (this.borderStickingVertical!=StickingMode.none)
 
 
                 this.mamesh.vertices.forEach((cell:Vertex)=> {
@@ -401,9 +477,9 @@ module mathis{
                         let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y);
                         let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y);
 
-                        if (c != null && cc != null) cell.setVoisinCouple(c, cc,checkExistingLinks)
-                        else if (c == null && cc != null) cell.setVoisinSingle(cc,checkExistingLinks)
-                        else if (c != null && cc == null) cell.setVoisinSingle(c,checkExistingLinks)
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
                     }
 
                     /**even lines */
@@ -412,18 +488,18 @@ module mathis{
                         let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y + 1);
                         let cc:Vertex = this.getVertex(cell.param.x, cell.param.y - 1);
 
-                        if (c != null && cc != null) cell.setVoisinCouple(c, cc,checkExistingLinks)
-                        else if (c == null && cc != null) cell.setVoisinSingle(cc,checkExistingLinks)
-                        else if (c != null && cc == null) cell.setVoisinSingle(c,checkExistingLinks)
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
 
 
                         // sud ouest - nord est
                         c = this.getVertex(cell.param.x, cell.param.y + 1);
                         cc = this.getVertex(cell.param.x + 1, cell.param.y - 1);
 
-                        if (c != null && cc != null) cell.setVoisinCouple(c, cc,checkExistingLinks)
-                        else if (c == null && cc != null) cell.setVoisinSingle(cc,checkExistingLinks)
-                        else if (c != null && cc == null) cell.setVoisinSingle(c,checkExistingLinks)
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
 
 
                     }
@@ -432,16 +508,16 @@ module mathis{
                         //sud est - nord ouest
                         let c:Vertex = this.getVertex(cell.param.x, cell.param.y + 1);
                         let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y - 1);
-                        if (c != null && cc != null) cell.setVoisinCouple(c, cc,checkExistingLinks)
-                        else if (c == null && cc != null) cell.setVoisinSingle(cc,checkExistingLinks)
-                        else if (c != null && cc == null) cell.setVoisinSingle(c,checkExistingLinks)
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
 
                         //sud ouest - nord est
                         c = this.getVertex(cell.param.x - 1, cell.param.y + 1);
                         cc = this.getVertex(cell.param.x, cell.param.y - 1);
-                        if (c != null && cc != null) cell.setVoisinCouple(c, cc,checkExistingLinks)
-                        else if (c == null && cc != null) cell.setVoisinSingle(cc,checkExistingLinks)
-                        else if (c != null && cc == null) cell.setVoisinSingle(c,checkExistingLinks)
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
 
                     }
 
@@ -499,7 +575,8 @@ module mathis{
         export class Cartesian extends Rectangle{
 
             cornersAreSharp=true
-
+            acceptDuplicateOppositeLinks=true
+            addTrianglesToClose=false
 
             private checkArgs(){
 
@@ -521,6 +598,23 @@ module mathis{
 
             }
 
+
+            //private computeDecayVerctor(a,A,b,B):XYZ{
+            //
+            //    if (a==0) return new XYZ(0,b,0)
+            //    let denominator=(A*B-a*b)
+            //    return new XYZ(a*A*B/denominator,a*b*B/denominator,0)
+            //}
+
+
+
+            private computeDecayVector(a,A,b,B,dV,dH):XYZ{
+                let res=new XYZ(0,0,0)
+                res.x= a*A*B/( A*B - a*b*dH *dV )
+                res.y=b*dV/A*res.x
+                return res
+            }
+
             go(){
 
 
@@ -534,14 +628,29 @@ module mathis{
                 let deltaX=(this.maxX-this.minX)/(this.nbX-1+addX)
                 let deltaY=(this.maxY-this.minY)/(this.nbY-1+addY)
 
+
+                let A=(this.maxX-this.minX)
+                let B=(this.maxY-this.minY)
+
+                let VX=this.computeDecayVector(deltaX,A,deltaY,B,this.nbVerticalDecays,this.nbHorizontalDecays)
+                let preVY=this.computeDecayVector(deltaY,B,deltaX,A,this.nbHorizontalDecays,this.nbVerticalDecays)
+                let VY=new XYZ(preVY.y,preVY.x,0)
+
+
                 let vertexId=0
                 for (let i=0;i<this.nbX;i++){
                     for (let j=0;j<this.nbY;j++){
                         let param = new XYZ(i, j, 0)
                         if (this.holeParameters==null ||  !this.paramIsHole(param)) {
 
+                            //let currentVertDecay= (this.nbVerticalDecays==0)? 0 : i*deltaX/(this.maxX-this.minX)*this.nbVerticalDecays*deltaY
+                            //let currentHorDecay= (this.nbHorizontalDecays==0)? 0 : j*deltaY/(this.maxY-this.minY)*this.nbHorizontalDecays*deltaX
+
                             let vertex = graphManip.addNewVertex(this.mamesh.vertices, j * this.nbX + i)
-                            vertex.position = basic.newXYZ(i * deltaX + this.minX, j * deltaY + this.minY, 0)
+                            vertex.position =  XYZ.newFrom(VX).scale(i)
+                            let ortherDirection=XYZ.newFrom(VY).scale(j)
+                            vertex.position.add(ortherDirection)
+
                             vertex.param=param
                             this.paramToVertex[i + ',' + j] = vertex
                             vertexId++
@@ -670,30 +779,48 @@ module mathis{
             private linksCreation(){
 
 
-                var checkExistingLinks=(this.borderStickingHorizontal!=StickingMode.none) || (this.borderStickingVertical!=StickingMode.none)
+                //var checkExistingLinks=(this.borderStickingHorizontal!=StickingMode.none) || (this.borderStickingVertical!=StickingMode.none)
 
 
                 this.mamesh.vertices.forEach((cell:Vertex)=> {
 
                     {
-                        let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y);
-                        let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y);
+                        let decayWhenCrossingBorderRightward=0
+                        let decayWhenCrossingBorderLeftward=0
+                        if (cell.param.x==0) decayWhenCrossingBorderLeftward=(this.borderStickingVertical==StickingMode.inverse)?this.nbVerticalDecays :  -this.nbVerticalDecays
+                        if (cell.param.x==this.nbX-1) decayWhenCrossingBorderRightward=+this.nbVerticalDecays
 
-                        if (c != null && cc != null) cell.setVoisinCouple(c, cc,checkExistingLinks)
-                        else if (c == null && cc != null) cell.setVoisinSingle(cc,checkExistingLinks)
-                        else if (c != null && cc == null) cell.setVoisinSingle(c,checkExistingLinks)
 
+
+                        let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y+decayWhenCrossingBorderRightward);
+                        let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y+decayWhenCrossingBorderLeftward);
+
+                        if (c != null && cc != null) {
+                            if (this.acceptDuplicateOppositeLinks) cell.setVoisinCouple(c,cc,false)
+                            else cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        }
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
 
                     }
 
 
                     {
-                        let c:Vertex = this.getVertex(cell.param.x , cell.param.y+1);
-                        let cc:Vertex = this.getVertex(cell.param.x , cell.param.y-1);
 
-                        if (c != null && cc != null) cell.setVoisinCouple(c, cc,checkExistingLinks)
-                        else if (c == null && cc != null) cell.setVoisinSingle(cc,checkExistingLinks)
-                        else if (c != null && cc == null) cell.setVoisinSingle(c,checkExistingLinks)
+                        let decayWhenCrossingUpward=0
+                        let decayWhenCrossingDownWard=0
+                        if (cell.param.y==0) decayWhenCrossingDownWard=(this.borderStickingHorizontal==StickingMode.inverse)?this.nbHorizontalDecays :  -this.nbHorizontalDecays
+                        if (cell.param.y==this.nbY-1) decayWhenCrossingUpward=+this.nbHorizontalDecays
+
+
+                        let c:Vertex = this.getVertex(cell.param.x +decayWhenCrossingUpward , cell.param.y+1);
+                        let cc:Vertex = this.getVertex(cell.param.x +decayWhenCrossingDownWard , cell.param.y-1);
+
+                        if (c != null && cc != null) {
+                            if (this.acceptDuplicateOppositeLinks) cell.setVoisinCouple(c,cc,false)
+                            else cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        }                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
 
                     }
 
@@ -710,8 +837,20 @@ module mathis{
 
                 for (let vertex of this.mamesh.vertices){
 
+
+
+
                     let i=vertex.param.x
                     let j=vertex.param.y
+
+                    let rightDecayWhenCrossing=0
+                    if (i==this.nbX-1) rightDecayWhenCrossing=+this.nbVerticalDecays
+
+                    let upDecayWhenCrossing=0
+                    if (j==this.nbY-1) upDecayWhenCrossing=+this.nbHorizontalDecays
+
+
+
 
                     let v:Vertex
                     let i1,i2,i3,i4:number
@@ -720,21 +859,64 @@ module mathis{
                     if (v!=null)  i1=v.id
                     else continue;
 
-                    v=this.getVertex(i+1,j)
+                    v=this.getVertex(i+1,j+rightDecayWhenCrossing)
                     if (v!=null)  i2=v.id
                     else continue;
 
-                    v=this.getVertex(i+1,j+1)
+                    v=this.getVertex(i+1+upDecayWhenCrossing,j+1+ rightDecayWhenCrossing)
                     if (v!=null)  i3=v.id
                     else continue;
 
-                    v=this.getVertex(i,j+1)
+                    v=this.getVertex(i+upDecayWhenCrossing,j+1)
                     if (v!=null)  i4=v.id
                     else continue;
 
                     this.mamesh.addASquare(i1,i2,i3,i4)
 
                 }
+
+
+
+
+                if (this.addTrianglesToClose) {
+
+                    if (this.nbVerticalDecays==1 && this.nbHorizontalDecays ==1) {
+
+                        let v:Vertex
+                        let i1, i2, i3:number
+                        v = this.getVertex(0, this.nbY - 1)
+                        i1 = v.id
+
+                        v = this.getVertex(this.nbHorizontalDecays, 0)
+                        i2 = v.id
+
+                        v = this.getVertex(0, 0)
+                        i3 = v.id
+
+                        this.mamesh.addATriangle(i1, i2, i3)
+
+
+                        v = this.getVertex(this.nbX - 1, 0)
+                        i1 = v.id
+
+                        v = this.getVertex(0, 0)
+                        i2 = v.id
+
+                        v = this.getVertex(0, this.nbVerticalDecays)
+                        i3 = v.id
+
+                        this.mamesh.addATriangle(i1, i2, i3)
+
+
+                    }
+                    else throw 'adding triangle to close is not yet operationnal for such parameters'
+                }
+
+
+
+
+
+
 
 
             }

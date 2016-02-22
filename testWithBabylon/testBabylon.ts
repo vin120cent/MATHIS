@@ -44,7 +44,7 @@ module mathis {
         //spot.specular = new BABYLON.Color3(0, 0, 0);
         //spot.intensity = 0.8;
 
-        var light0 = new BABYLON.HemisphericLight("Hemi0", new BABYLON.Vector3(-1, 0, 0), scene);
+        var light0 = new BABYLON.HemisphericLight("Hemi0", new BABYLON.Vector3(-1, 0, -0.7), scene);
         light0.diffuse = new BABYLON.Color3(1, 1, 1);
         light0.specular = new BABYLON.Color3(0.5,0.5,0.5);
         light0.groundColor = new BABYLON.Color3(0, 0, 0);
@@ -55,11 +55,141 @@ module mathis {
 
         let mmc = new MameshCreator()
 
-        let testType = 'torusTri'
+        let testType = 'torusDecay'
 
         switch (testType) {
 
 
+            case 'cylinderSpiral':
+            {
+
+
+                let macam = new mathis.Macamera(scene)
+                macam.trueCamPos.position=new XYZ(0,0,-10)
+                macam.currentGrabber.center=new XYZ(0,0,0)
+                macam.currentGrabber.radius=1.5
+                macam.useFreeModeWhenCursorOutOfGrabber=true
+                macam.currentGrabber.drawGrabber=true
+                macam.go()
+                macam.attachControl(canvas)
+
+
+                let mamesh = new Mamesh()
+                let meshMaker = new flat.Cartesian(mamesh)
+                meshMaker.makeLinks=true
+                meshMaker.nbX=10
+                meshMaker.maxX=2*Math.PI
+                meshMaker.nbY=5
+                meshMaker.minY=0
+                meshMaker.maxY=2*Math.PI
+                meshMaker.cornersAreSharp=true
+                meshMaker.addSquare=true
+                meshMaker.nbVerticalDecays=0
+                meshMaker.nbHorizontalDecays=1
+                meshMaker.borderStickingVertical=flat.StickingMode.none
+                meshMaker.borderStickingHorizontal=flat.StickingMode.simple
+                meshMaker.go()
+
+                mamesh.fillLineCatalogue()
+
+
+                mamesh.vertices.forEach((vertex:Vertex)=>{
+                    let v=vertex.position.x
+                    let u=vertex.position.y
+                    vertex.position.x=Math.cos(u)
+                    vertex.position.y=Math.sin(u)
+                    vertex.position.z=v //+u/(2*Math.PI*(meshMaker.nbY-1))*(meshMaker.maxY-meshMaker.minY)
+                })
+
+
+                cc(mamesh.toString())
+
+                let lll=new visu3d.LinesVisu(mamesh,scene)
+                lll.smoothStyle=LineInterpoler.type.none
+                lll.radiusFunction=visu3d.LinesVisu.constantRadius(0.02)
+                lll.go()
+
+                let bab=new MameshToBabmesh(mamesh,scene)
+                bab.go()
+
+
+
+            }
+                break;
+
+
+
+            case 'torusDecay':
+            {
+
+                let r=0.8
+                let a=2
+
+                let macam = new mathis.Macamera(scene)
+                macam.trueCamPos.position=new XYZ(0,0,-10)
+                macam.currentGrabber.center=new XYZ(0,0,0)
+                macam.currentGrabber.radius=a+r
+                macam.showPredefinedConsoleLog=false
+                macam.currentGrabber.drawGrabber=false
+                macam.go()
+                macam.attachControl(canvas)
+
+                let mamesh = new Mamesh()
+                let meshMaker = new flat.Cartesian(mamesh)
+                meshMaker.makeLinks=true
+                meshMaker.nbX=10
+                meshMaker.nbY=10
+
+                meshMaker.minX=0
+                meshMaker.maxX=2*Math.PI
+
+                meshMaker.minY=0
+                meshMaker.maxY=2*Math.PI
+
+                meshMaker.nbVerticalDecays=1
+                meshMaker.nbHorizontalDecays=1
+                meshMaker.borderStickingHorizontal=flat.StickingMode.none
+                meshMaker.borderStickingVertical=flat.StickingMode.none
+                meshMaker.go()
+
+
+
+                mamesh.fillLineCatalogue()
+                cc(mamesh.toString())
+
+                mamesh.vertices.forEach((vertex:Vertex)=>{
+
+                    let u=vertex.position.x
+                    let v=vertex.position.y
+
+                    vertex.position.x=(r*Math.cos(u)+a)*Math.cos((v))
+                    vertex.position.y=(r*Math.cos(u)+a)*Math.sin((v))
+                    vertex.position.z=r*Math.sin(u)
+
+                })
+
+                //mamesh.vertices.forEach((vertex:Vertex)=>{
+                //    let u=vertex.position.x
+                //    let v=vertex.position.y
+                //    vertex.position.x=Math.cos(u)
+                //    vertex.position.y=Math.sin(u)
+                //    vertex.position.z=v
+                //})
+
+
+                let lll=new visu3d.LinesVisu(mamesh,scene)
+                lll.smoothStyle=LineInterpoler.type.none
+                lll.radiusFunction=visu3d.LinesVisu.constantRadius(0.02)
+                lll.go()
+
+
+                let bab=new MameshToBabmesh(mamesh,scene)
+                bab.alpha=1
+                bab.duplicatePositionsWhenNormalsAreTooFarr=false
+                let vertexData=bab.go()
+
+            }
+                break
 
 
 
@@ -247,67 +377,7 @@ module mathis {
             }
                 break
 
-            case 'postProcess':
-            {
 
-
-                   let camera = new BABYLON.ArcRotateCamera("toto", 0, 0, -10, new BABYLON.Vector3(0,0,0), scene)
-                    camera.lowerBetaLimit = 0.01
-                    camera.upperBetaLimit = Math.PI
-                   camera.attachControl(canvas);
-
-                //(name: string, ratio: number, camera: Camera, samplingMode?: number, engine?: Engine, reusable?: boolean);
-
-                //var postProcess = new BABYLON.BlurPostProcess("Horizontal blur", new BABYLON.Vector2(1.0, 0), 0.0, 2, camera, null, engine, true);
-                //var postProcess = new BABYLON.FxaaPostProcess("fxaa", 1.0, camera, null, engine, true);
-
-
-                let mamesh = new Mamesh()
-                let meshMaker = new flat.Cartesian(mamesh)
-                meshMaker.makeLinks=true
-                meshMaker.nbX=30
-                meshMaker.maxX=2*Math.PI
-                meshMaker.nbY=6
-                meshMaker.minY=-1
-                meshMaker.maxY=+1
-                meshMaker.cornersAreSharp=true
-                meshMaker.addSquare=true
-                meshMaker.go()
-
-                mamesh.fillLineCatalogue()
-
-
-                mamesh.vertices.forEach((vertex:Vertex)=>{
-                    let u=vertex.position.x
-                    let v=vertex.position.y
-                    vertex.position.x=(2-v*Math.sin(u/2))*Math.sin(u)
-                    vertex.position.y=(2-v*Math.sin(u/2))*Math.cos(u)
-                    vertex.position.z=v*Math.cos(u/2)
-                })
-
-                let lll=new visu3d.LinesVisu(mamesh,scene)
-                lll.radiusFunction=null//visu3d.LinesVisu.constantRadius(0.02)
-                lll.go()
-
-                let bab=new MameshToBabmesh(mamesh)
-                bab.duplicatePositionsWhenNormalsAreTooFarr=true
-                let vertexData=bab.go()
-
-
-                var mat = new BABYLON.StandardMaterial("mat1", scene);
-                mat.alpha = 0.5;
-                mat.diffuseColor = new BABYLON.Color3(1,0.2,0.2)
-                mat.backFaceCulling = true
-
-
-                let babMesh = new BABYLON.Mesh(name, scene)
-                vertexData.applyToMesh(babMesh)
-                babMesh.material=mat
-
-
-
-            }
-                break;
 
             case 'squareTriBottomDicho':
             {
@@ -353,8 +423,6 @@ module mathis {
                 break;
 
             case 'helice':
-
-
             {
                 let macam = new mathis.Macamera(scene)
                 macam.trueCamPos.position = new XYZ(0, 0, -10)
@@ -369,10 +437,7 @@ module mathis {
 
 
             }
-
                 break;
-
-
 
             case 'moebius':
             {
@@ -399,6 +464,7 @@ module mathis {
                 meshMaker.maxY=+1
                 meshMaker.cornersAreSharp=true
                 meshMaker.addSquare=true
+                meshMaker.nbVerticalDecays=1
                 meshMaker.borderStickingVertical=flat.StickingMode.inverse
                 meshMaker.borderStickingHorizontal=flat.StickingMode.none
                 meshMaker.go()
@@ -425,63 +491,6 @@ module mathis {
 
             }
                 break;
-
-
-            case 'cylinderSpiral':
-            {
-
-
-                let macam = new mathis.Macamera(scene)
-                macam.trueCamPos.position=new XYZ(0,0,-10)
-                macam.currentGrabber.center=new XYZ(0,0,0)
-                macam.currentGrabber.radius=1.5
-                macam.useFreeModeWhenCursorOutOfGrabber=false
-                macam.currentGrabber.drawGrabber=true
-                macam.go()
-                macam.attachControl(canvas)
-
-
-                let mamesh = new Mamesh()
-                let meshMaker = new flat.Cartesian(mamesh)
-                meshMaker.makeLinks=true
-                meshMaker.nbX=10
-                meshMaker.maxX=2*Math.PI
-                meshMaker.nbY=3
-                meshMaker.minY=-1
-                meshMaker.maxY=1
-                meshMaker.cornersAreSharp=true
-                meshMaker.addSquare=true
-                meshMaker.borderStickingVertical=flat.StickingMode.decay
-                meshMaker.borderStickingHorizontal=flat.StickingMode.none
-                meshMaker.go()
-
-                mamesh.fillLineCatalogue()
-
-
-                mamesh.vertices.forEach((vertex:Vertex)=>{
-                    let u=vertex.position.x
-                    let v=vertex.position.y
-                    vertex.position.x=Math.cos(u)
-                    vertex.position.y=Math.sin(u)
-                    vertex.position.z=v+u/(2*Math.PI*(meshMaker.nbY-1))*(meshMaker.maxY-meshMaker.minY)
-                })
-
-
-                cc(mamesh.toString())
-
-                let lll=new visu3d.LinesVisu(mamesh,scene)
-                lll.smoothStyle=LineInterpoler.type.none
-                lll.radiusFunction=visu3d.LinesVisu.constantRadius(0.02)
-                lll.go()
-
-                let bab=new MameshToBabmesh(mamesh,scene)
-                bab.go()
-
-
-
-            }
-                break;
-
 
 
 
@@ -511,7 +520,7 @@ module mathis {
                 meshMaker.maxY=2
                 meshMaker.cornersAreSharp=true
                 meshMaker.addSquare=true
-                meshMaker.borderStickingVertical=flat.StickingMode.decay
+                meshMaker.borderStickingVertical=flat.StickingMode.simple
                 meshMaker.borderStickingHorizontal=flat.StickingMode.none
                 meshMaker.go()
 

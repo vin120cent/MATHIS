@@ -45,12 +45,19 @@ var mathis;
             this.z = z;
             return this;
         };
-        XYZ.prototype.normalize = function () {
+        XYZ.prototype.normalize = function (throwExceptionIfZeroVector) {
+            if (throwExceptionIfZeroVector === void 0) { throwExceptionIfZeroVector = false; }
             var norm = mathis.geo.norme(this);
             if (norm < mathis.basic.epsilon)
                 console.log('be careful, you have normalized a very small vector');
-            if (norm == 0)
-                throw 'impossible to normalize the zero vector';
+            if (norm == 0) {
+                if (throwExceptionIfZeroVector)
+                    throw 'impossible to normalize the zero vector';
+                else {
+                    this.changeFrom(1, 0, 0);
+                    return this;
+                }
+            }
             return this.scale(1 / norm);
         };
         XYZ.prototype.almostEqual = function (vect) {
@@ -185,9 +192,9 @@ var mathis;
             }
             return null;
         };
-        Vertex.prototype.setVoisinCouple = function (cell1, cell2, checkExistiging) {
-            if (checkExistiging === void 0) { checkExistiging = false; }
-            if (checkExistiging) {
+        Vertex.prototype.setVoisinCouple = function (cell1, cell2, suppressExisting) {
+            if (suppressExisting === void 0) { suppressExisting = false; }
+            if (suppressExisting) {
                 this.suppressOneVoisin(cell1, false);
                 this.suppressOneVoisin(cell2, false);
             }
@@ -197,16 +204,55 @@ var mathis;
             fle2.opposite = fle1;
             this.links.push(fle1, fle2);
         };
+        Vertex.prototype.setVoisinCoupleKeepingExistingAtBest = function (cell1, cell2) {
+            var link1 = this.findLink(cell1);
+            var link2 = this.findLink(cell2);
+            if (link1 == null && link2 == null) {
+                var fle1 = new Link(cell1);
+                var fle2 = new Link(cell2);
+                fle1.opposite = fle2;
+                fle2.opposite = fle1;
+                this.links.push(fle1, fle2);
+            }
+            else if (link1 != null && link2 == null) {
+                if (link1.opposite == null)
+                    this.setVoisinCouple(cell1, cell2, true);
+                else {
+                    mathis.removeFromArray(this.links, link1);
+                    link1.opposite.opposite = null;
+                    this.setVoisinSingle(cell1);
+                    this.setVoisinSingle(cell2);
+                }
+            }
+            else if (link2 != null && link1 == null) {
+                if (link2.opposite == null)
+                    this.setVoisinCouple(cell2, cell1, true);
+                else {
+                    mathis.removeFromArray(this.links, link2);
+                    link2.opposite.opposite = null;
+                    this.setVoisinSingle(cell1);
+                    this.setVoisinSingle(cell2);
+                }
+            }
+            else if (link1 != null && link2 != null) {
+                if (link1.opposite != link2) {
+                    link1.opposite.opposite = null;
+                    link1.opposite = null;
+                    link2.opposite.opposite = null;
+                    link2.opposite = null;
+                }
+            }
+        };
         Vertex.prototype.setVoisinSingle = function (cell1, checkExistiging) {
             if (checkExistiging === void 0) { checkExistiging = false; }
             if (checkExistiging)
                 this.suppressOneVoisin(cell1, false);
             this.links.push(new Link(cell1));
         };
-        Vertex.prototype.suppressOneVoisin = function (voisin, checkVoisinExists) {
+        Vertex.prototype.suppressOneVoisin = function (voisin, exceptionIfNonExisting) {
             var link = this.findLink(voisin);
             if (link == null) {
-                if (checkVoisinExists)
+                if (exceptionIfNonExisting)
                     throw "a voisin to suppress is not present";
                 return;
             }
@@ -416,7 +462,6 @@ var mathis;
             StickingMode[StickingMode["simple"] = 0] = "simple";
             StickingMode[StickingMode["inverse"] = 1] = "inverse";
             StickingMode[StickingMode["none"] = 2] = "none";
-            StickingMode[StickingMode["decay"] = 3] = "decay";
         })(flat.StickingMode || (flat.StickingMode = {}));
         var StickingMode = flat.StickingMode;
         var Rectangle = (function () {
@@ -431,9 +476,9 @@ var mathis;
                 this.addSquare = true;
                 this.borderStickingVertical = StickingMode.none;
                 this.borderStickingHorizontal = StickingMode.none;
-                this.decay = 1;
+                this.nbVerticalDecays = 0;
+                this.nbHorizontalDecays = 0;
                 this.holeParameters = new Array();
-                this.stickingFunction = null;
                 this.paramToVertex = {};
                 this.mamesh = mamesh;
             }
@@ -445,161 +490,25 @@ var mathis;
                 }
                 return false;
             };
-            Rectangle.prototype.buildStickingFunction = function (verticalMode, horizontalMode) {
-                var resFunction = null;
-                if (verticalMode == StickingMode.simple && horizontalMode == StickingMode.simple) {
-                    resFunction = function (i, j, nbX, nbY) {
-                        var iRes = null;
-                        var jRes = null;
-                        if (i == -1)
-                            iRes = nbX - 1;
-                        else if (i == nbX)
-                            iRes = 0;
-                        else if (i >= 0 && i < nbX)
-                            iRes = i;
-                        if (j == -1)
-                            jRes = nbY - 1;
-                        else if (j == nbY)
-                            jRes = 0;
-                        else if (j >= 0 && j < nbY)
-                            jRes = j;
-                        return { i: iRes, j: jRes };
-                    };
-                }
-                else if (verticalMode == StickingMode.simple && horizontalMode == StickingMode.none) {
-                    resFunction = function (i, j, nbX, nbY) {
-                        var iRes = null;
-                        var jRes = null;
-                        if (j >= 0 && j < nbY)
-                            jRes = j;
-                        if (i == -1)
-                            iRes = nbX - 1;
-                        else if (i == nbX)
-                            iRes = 0;
-                        else if (i >= 0 && i < nbX)
-                            iRes = i;
-                        return { i: iRes, j: jRes };
-                    };
-                }
-                else if (verticalMode == StickingMode.simple && horizontalMode == StickingMode.inverse) {
-                    resFunction = function (i, j, nbX, nbY) {
-                        var iRes = null;
-                        var jRes = null;
-                        if (j >= 0 && j < nbY) {
-                            if (i == -1)
-                                iRes = nbX - 1;
-                            else if (i == nbX)
-                                iRes = 0;
-                            else if (i >= 0 && i < nbX)
-                                iRes = i;
-                        }
-                        else {
-                            if (j == -1) {
-                                jRes = nbY - 1;
-                                if (i <= -1)
-                                    iRes = null;
-                                else if (i >= nbX)
-                                    iRes = null;
-                                else
-                                    iRes = nbX - 1 - i;
-                            }
-                            else if (j == nbY) {
-                                jRes = 0;
-                                if (i <= -1)
-                                    iRes = null;
-                                else if (i >= nbX)
-                                    iRes = null;
-                                else
-                                    iRes = nbX - 1 - i;
-                            }
-                        }
-                        return { i: iRes, j: jRes };
-                    };
-                }
-                else if (verticalMode == StickingMode.none && horizontalMode == StickingMode.inverse) {
-                    resFunction = function (i, j, nbX, nbY) {
-                        var iRes = null;
-                        var jRes = null;
-                        if (j >= 0 && j < nbY && i >= 0 && i < nbX) {
-                            iRes = i;
-                            jRes = j;
-                        }
-                        else {
-                            if (j == -1) {
-                                jRes = nbY - 1;
-                                if (i <= -1)
-                                    iRes = null;
-                                else if (i >= nbX)
-                                    iRes = null;
-                                else
-                                    iRes = nbX - 1 - i;
-                            }
-                            else if (j == nbY) {
-                                jRes = 0;
-                                if (i <= -1)
-                                    iRes = null;
-                                else if (i >= nbX)
-                                    iRes = null;
-                                else
-                                    iRes = nbX - 1 - i;
-                            }
-                        }
-                        return { i: iRes, j: jRes };
-                    };
-                }
-                else if (verticalMode == StickingMode.none && horizontalMode == StickingMode.none) {
-                    resFunction = function (i, j, nbX, nbY) {
-                        var iRes = null;
-                        var jRes = null;
-                        if (j >= 0 && j < nbY) {
-                            if (i >= 0 && i < nbX) {
-                                iRes = i;
-                                jRes = j;
-                            }
-                        }
-                        return { i: iRes, j: jRes };
-                    };
-                }
-                else if (verticalMode == StickingMode.decay && horizontalMode == StickingMode.none) {
-                    resFunction = function (i, j, nbX, nbY) {
-                        var iRes = null;
-                        var jRes = null;
-                        if (j >= 0 && j < nbY && i >= 0 && i < nbX) {
-                            iRes = i;
-                            jRes = j;
-                        }
-                        else if (i == -1) {
-                            if (j >= 1 && j < nbY) {
-                                iRes = nbX - 1;
-                                jRes = j - 1;
-                            }
-                        }
-                        else if (i == nbX) {
-                            if (j >= 0 && j < nbY - 1) {
-                                iRes = 0;
-                                jRes = j + 1;
-                            }
-                        }
-                        return { i: iRes, j: jRes };
-                    };
-                }
-                return resFunction;
-            };
             Rectangle.prototype.superGo = function () {
-                var sticking = this.buildStickingFunction(this.borderStickingVertical, this.borderStickingHorizontal);
-                if (sticking != null) {
-                    this.stickingFunction = sticking;
-                }
-                else {
-                    sticking = this.buildStickingFunction(this.borderStickingHorizontal, this.borderStickingVertical);
-                    if (sticking != null)
-                        this.stickingFunction = function (i, j, nbX, nbY) {
-                            var res = sticking(j, i, nbY, nbX);
-                            return { i: res.j, j: res.i };
-                        };
-                    else
-                        throw 'this combinaison of border sticking mode is impossible';
-                }
+                //let sticking=this.buildStickingFunction(this.borderStickingVertical,this.borderStickingHorizontal)
+                //
+                //if (sticking!=null) {
+                //    this.stickingFunction=sticking
+                //
+                //}
+                //else {
+                //
+                //
+                //    sticking=this.buildStickingFunction(this.borderStickingHorizontal,this.borderStickingVertical)
+                //
+                //    if (sticking!=null) this.stickingFunction= (i,j,nbX,nbY)=>{
+                //        let res=sticking(j,i,nbY,nbX)
+                //        return {i:res.j,j:res.i}
+                //    }
+                //    else throw 'this combinaison of border sticking mode is impossible'
+                //
+                //}
             };
             Rectangle.prototype.getVertex = function (i, j) {
                 //let iRes=i
@@ -618,8 +527,29 @@ var mathis;
                 //    iRes=this.horizontalStickingFunction(i)
                 //    jRes=modulo(j,this.nbY)
                 //}
-                var ijRes = this.stickingFunction(i, j, this.nbX, this.nbY);
-                return this.paramToVertex[ijRes.i + ',' + ijRes.j];
+                var iRes = null;
+                var jRes = null;
+                if (this.borderStickingVertical != StickingMode.inverse && this.borderStickingHorizontal != StickingMode.inverse) {
+                    if (this.borderStickingVertical == StickingMode.none)
+                        iRes = i;
+                    else if (this.borderStickingVertical == StickingMode.simple)
+                        iRes = mathis.modulo(i, this.nbX);
+                    if (this.borderStickingHorizontal == StickingMode.none)
+                        jRes = j;
+                    else if (this.borderStickingHorizontal == StickingMode.simple)
+                        jRes = mathis.modulo(j, this.nbY);
+                }
+                else if (this.borderStickingVertical == StickingMode.inverse && this.borderStickingHorizontal == StickingMode.none) {
+                    if (i < 0 || i >= this.nbX) {
+                        iRes = mathis.modulo(i, this.nbX);
+                        jRes = this.nbY - 1 - j;
+                    }
+                    else {
+                        iRes = i;
+                        jRes = j;
+                    }
+                }
+                return this.paramToVertex[iRes + ',' + jRes];
             };
             return Rectangle;
         })();
@@ -670,9 +600,10 @@ var mathis;
                         var param = new mathis.XYZ(i, j, 0);
                         if (this.holeParameters == null || !this.paramIsHole(param)) {
                             var leftDecayForOddLines = (j % 2 == 1) ? 0.5 * deltaX : 0;
+                            var currentVertDecay = (this.nbVerticalDecays == 0) ? 0 : i * deltaX / (this.maxX - this.minX) * this.nbVerticalDecays * deltaY;
                             var vertex = mathis.graphManip.addNewVertex(this.mamesh.vertices, cellId);
                             vertex.param = param;
-                            vertex.position = mathis.basic.newXYZ(positionPerhapsModulo(i * deltaX - leftDecayForOddLines) + this.minX, (j * deltaY + this.minY), 0);
+                            vertex.position = mathis.basic.newXYZ(i * deltaX - leftDecayForOddLines + this.minX, (j * deltaY + this.minY) + currentVertDecay, 0);
                             this.paramToVertex[i + ',' + j] = vertex;
                             cellId++;
                             if (!this.addMarkForHoneyComb || !this.isHoneyCombCenter(i, j))
@@ -685,53 +616,52 @@ var mathis;
             };
             Quinconce.prototype.linksCreation = function () {
                 var _this = this;
-                var checkExistingLinks = (this.borderStickingHorizontal != StickingMode.none) || (this.borderStickingVertical != StickingMode.none);
                 this.mamesh.vertices.forEach(function (cell) {
                     {
                         var c = _this.getVertex(cell.param.x + 1, cell.param.y);
                         var cc_1 = _this.getVertex(cell.param.x - 1, cell.param.y);
                         if (c != null && cc_1 != null)
-                            cell.setVoisinCouple(c, cc_1, checkExistingLinks);
+                            cell.setVoisinCoupleKeepingExistingAtBest(c, cc_1);
                         else if (c == null && cc_1 != null)
-                            cell.setVoisinSingle(cc_1, checkExistingLinks);
+                            cell.setVoisinSingle(cc_1, true);
                         else if (c != null && cc_1 == null)
-                            cell.setVoisinSingle(c, checkExistingLinks);
+                            cell.setVoisinSingle(c, true);
                     }
                     if (cell.param.y % 2 == 0) {
                         var c = _this.getVertex(cell.param.x + 1, cell.param.y + 1);
                         var cc_2 = _this.getVertex(cell.param.x, cell.param.y - 1);
                         if (c != null && cc_2 != null)
-                            cell.setVoisinCouple(c, cc_2, checkExistingLinks);
+                            cell.setVoisinCoupleKeepingExistingAtBest(c, cc_2);
                         else if (c == null && cc_2 != null)
-                            cell.setVoisinSingle(cc_2, checkExistingLinks);
+                            cell.setVoisinSingle(cc_2, true);
                         else if (c != null && cc_2 == null)
-                            cell.setVoisinSingle(c, checkExistingLinks);
+                            cell.setVoisinSingle(c, true);
                         c = _this.getVertex(cell.param.x, cell.param.y + 1);
                         cc_2 = _this.getVertex(cell.param.x + 1, cell.param.y - 1);
                         if (c != null && cc_2 != null)
-                            cell.setVoisinCouple(c, cc_2, checkExistingLinks);
+                            cell.setVoisinCoupleKeepingExistingAtBest(c, cc_2);
                         else if (c == null && cc_2 != null)
-                            cell.setVoisinSingle(cc_2, checkExistingLinks);
+                            cell.setVoisinSingle(cc_2, true);
                         else if (c != null && cc_2 == null)
-                            cell.setVoisinSingle(c, checkExistingLinks);
+                            cell.setVoisinSingle(c, true);
                     }
                     else {
                         var c = _this.getVertex(cell.param.x, cell.param.y + 1);
                         var cc_3 = _this.getVertex(cell.param.x - 1, cell.param.y - 1);
                         if (c != null && cc_3 != null)
-                            cell.setVoisinCouple(c, cc_3, checkExistingLinks);
+                            cell.setVoisinCoupleKeepingExistingAtBest(c, cc_3);
                         else if (c == null && cc_3 != null)
-                            cell.setVoisinSingle(cc_3, checkExistingLinks);
+                            cell.setVoisinSingle(cc_3, true);
                         else if (c != null && cc_3 == null)
-                            cell.setVoisinSingle(c, checkExistingLinks);
+                            cell.setVoisinSingle(c, true);
                         c = _this.getVertex(cell.param.x - 1, cell.param.y + 1);
                         cc_3 = _this.getVertex(cell.param.x, cell.param.y - 1);
                         if (c != null && cc_3 != null)
-                            cell.setVoisinCouple(c, cc_3, checkExistingLinks);
+                            cell.setVoisinCoupleKeepingExistingAtBest(c, cc_3);
                         else if (c == null && cc_3 != null)
-                            cell.setVoisinSingle(cc_3, checkExistingLinks);
+                            cell.setVoisinSingle(cc_3, true);
                         else if (c != null && cc_3 == null)
-                            cell.setVoisinSingle(c, checkExistingLinks);
+                            cell.setVoisinSingle(c, true);
                     }
                 });
                 if (this.addTriangles)
@@ -770,6 +700,8 @@ var mathis;
             function Cartesian() {
                 _super.apply(this, arguments);
                 this.cornersAreSharp = true;
+                this.acceptDuplicateOppositeLinks = true;
+                this.addTrianglesToClose = false;
             }
             Cartesian.prototype.checkArgs = function () {
                 if (this.nbX < 2)
@@ -791,6 +723,12 @@ var mathis;
                 if (this.borderStickingHorizontal != StickingMode.none && this.nbY == 2)
                     throw 'nbY too small for sticking';
             };
+            Cartesian.prototype.computeDecayVector = function (a, A, b, B, dV, dH) {
+                var res = new mathis.XYZ(0, 0, 0);
+                res.x = a * A * B / (A * B - a * b * dH * dV);
+                res.y = b * dV / A * res.x;
+                return res;
+            };
             Cartesian.prototype.go = function () {
                 this.checkArgs();
                 this.superGo();
@@ -798,13 +736,20 @@ var mathis;
                 var addY = (this.borderStickingHorizontal != StickingMode.none) ? 1 : 0;
                 var deltaX = (this.maxX - this.minX) / (this.nbX - 1 + addX);
                 var deltaY = (this.maxY - this.minY) / (this.nbY - 1 + addY);
+                var A = (this.maxX - this.minX);
+                var B = (this.maxY - this.minY);
+                var VX = this.computeDecayVector(deltaX, A, deltaY, B, this.nbVerticalDecays, this.nbHorizontalDecays);
+                var preVY = this.computeDecayVector(deltaY, B, deltaX, A, this.nbHorizontalDecays, this.nbVerticalDecays);
+                var VY = new mathis.XYZ(preVY.y, preVY.x, 0);
                 var vertexId = 0;
                 for (var i = 0; i < this.nbX; i++) {
                     for (var j = 0; j < this.nbY; j++) {
                         var param = new mathis.XYZ(i, j, 0);
                         if (this.holeParameters == null || !this.paramIsHole(param)) {
                             var vertex = mathis.graphManip.addNewVertex(this.mamesh.vertices, j * this.nbX + i);
-                            vertex.position = mathis.basic.newXYZ(i * deltaX + this.minX, j * deltaY + this.minY, 0);
+                            vertex.position = mathis.XYZ.newFrom(VX).scale(i);
+                            var ortherDirection = mathis.XYZ.newFrom(VY).scale(j);
+                            vertex.position.add(ortherDirection);
                             vertex.param = param;
                             this.paramToVertex[i + ',' + j] = vertex;
                             vertexId++;
@@ -832,28 +777,48 @@ var mathis;
                     this.squareCreation();
             };
             Cartesian.prototype.linksCreation = function () {
+                //var checkExistingLinks=(this.borderStickingHorizontal!=StickingMode.none) || (this.borderStickingVertical!=StickingMode.none)
                 var _this = this;
-                var checkExistingLinks = (this.borderStickingHorizontal != StickingMode.none) || (this.borderStickingVertical != StickingMode.none);
                 this.mamesh.vertices.forEach(function (cell) {
                     {
-                        var c = _this.getVertex(cell.param.x + 1, cell.param.y);
-                        var cc_4 = _this.getVertex(cell.param.x - 1, cell.param.y);
-                        if (c != null && cc_4 != null)
-                            cell.setVoisinCouple(c, cc_4, checkExistingLinks);
+                        var decayWhenCrossingBorderRightward = 0;
+                        var decayWhenCrossingBorderLeftward = 0;
+                        if (cell.param.x == 0)
+                            decayWhenCrossingBorderLeftward = (_this.borderStickingVertical == StickingMode.inverse) ? _this.nbVerticalDecays : -_this.nbVerticalDecays;
+                        if (cell.param.x == _this.nbX - 1)
+                            decayWhenCrossingBorderRightward = +_this.nbVerticalDecays;
+                        var c = _this.getVertex(cell.param.x + 1, cell.param.y + decayWhenCrossingBorderRightward);
+                        var cc_4 = _this.getVertex(cell.param.x - 1, cell.param.y + decayWhenCrossingBorderLeftward);
+                        if (c != null && cc_4 != null) {
+                            if (_this.acceptDuplicateOppositeLinks)
+                                cell.setVoisinCouple(c, cc_4, false);
+                            else
+                                cell.setVoisinCoupleKeepingExistingAtBest(c, cc_4);
+                        }
                         else if (c == null && cc_4 != null)
-                            cell.setVoisinSingle(cc_4, checkExistingLinks);
+                            cell.setVoisinSingle(cc_4, true);
                         else if (c != null && cc_4 == null)
-                            cell.setVoisinSingle(c, checkExistingLinks);
+                            cell.setVoisinSingle(c, true);
                     }
                     {
-                        var c = _this.getVertex(cell.param.x, cell.param.y + 1);
-                        var cc_5 = _this.getVertex(cell.param.x, cell.param.y - 1);
-                        if (c != null && cc_5 != null)
-                            cell.setVoisinCouple(c, cc_5, checkExistingLinks);
+                        var decayWhenCrossingUpward = 0;
+                        var decayWhenCrossingDownWard = 0;
+                        if (cell.param.y == 0)
+                            decayWhenCrossingDownWard = (_this.borderStickingHorizontal == StickingMode.inverse) ? _this.nbHorizontalDecays : -_this.nbHorizontalDecays;
+                        if (cell.param.y == _this.nbY - 1)
+                            decayWhenCrossingUpward = +_this.nbHorizontalDecays;
+                        var c = _this.getVertex(cell.param.x + decayWhenCrossingUpward, cell.param.y + 1);
+                        var cc_5 = _this.getVertex(cell.param.x + decayWhenCrossingDownWard, cell.param.y - 1);
+                        if (c != null && cc_5 != null) {
+                            if (_this.acceptDuplicateOppositeLinks)
+                                cell.setVoisinCouple(c, cc_5, false);
+                            else
+                                cell.setVoisinCoupleKeepingExistingAtBest(c, cc_5);
+                        }
                         else if (c == null && cc_5 != null)
-                            cell.setVoisinSingle(cc_5, checkExistingLinks);
+                            cell.setVoisinSingle(cc_5, true);
                         else if (c != null && cc_5 == null)
-                            cell.setVoisinSingle(c, checkExistingLinks);
+                            cell.setVoisinSingle(c, true);
                     }
                 });
             };
@@ -862,6 +827,12 @@ var mathis;
                     var vertex = _a[_i];
                     var i = vertex.param.x;
                     var j = vertex.param.y;
+                    var rightDecayWhenCrossing = 0;
+                    if (i == this.nbX - 1)
+                        rightDecayWhenCrossing = +this.nbVerticalDecays;
+                    var upDecayWhenCrossing = 0;
+                    if (j == this.nbY - 1)
+                        upDecayWhenCrossing = +this.nbHorizontalDecays;
                     var v = void 0;
                     var i1 = void 0, i2 = void 0, i3 = void 0, i4 = void 0;
                     v = this.getVertex(i, j);
@@ -869,22 +840,44 @@ var mathis;
                         i1 = v.id;
                     else
                         continue;
-                    v = this.getVertex(i + 1, j);
+                    v = this.getVertex(i + 1, j + rightDecayWhenCrossing);
                     if (v != null)
                         i2 = v.id;
                     else
                         continue;
-                    v = this.getVertex(i + 1, j + 1);
+                    v = this.getVertex(i + 1 + upDecayWhenCrossing, j + 1 + rightDecayWhenCrossing);
                     if (v != null)
                         i3 = v.id;
                     else
                         continue;
-                    v = this.getVertex(i, j + 1);
+                    v = this.getVertex(i + upDecayWhenCrossing, j + 1);
                     if (v != null)
                         i4 = v.id;
                     else
                         continue;
                     this.mamesh.addASquare(i1, i2, i3, i4);
+                }
+                if (this.addTrianglesToClose) {
+                    if (this.nbVerticalDecays == 1 && this.nbHorizontalDecays == 1) {
+                        var v;
+                        var i1, i2, i3;
+                        v = this.getVertex(0, this.nbY - 1);
+                        i1 = v.id;
+                        v = this.getVertex(this.nbHorizontalDecays, 0);
+                        i2 = v.id;
+                        v = this.getVertex(0, 0);
+                        i3 = v.id;
+                        this.mamesh.addATriangle(i1, i2, i3);
+                        v = this.getVertex(this.nbX - 1, 0);
+                        i1 = v.id;
+                        v = this.getVertex(0, 0);
+                        i2 = v.id;
+                        v = this.getVertex(0, this.nbVerticalDecays);
+                        i3 = v.id;
+                        this.mamesh.addATriangle(i1, i2, i3);
+                    }
+                    else
+                        throw 'adding triangle to close is not yet operationnal for such parameters';
                 }
             };
             return Cartesian;
@@ -1577,6 +1570,61 @@ var mathis;
         return Geometry;
     })();
     mathis.Geometry = Geometry;
+    var geometry;
+    (function (geometry) {
+        var CloseXYZfinder = (function () {
+            function CloseXYZfinder(firstList, secondList) {
+                this.nbDistinctPoint = 100000;
+                this.mins = new mathis.XYZ(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+                this.maxs = new mathis.XYZ(-Number.MAX_VALUE, -Number.MAX_VALUE, -Number.MAX_VALUE);
+                this.firstList = firstList;
+                this.secondList = secondList;
+            }
+            CloseXYZfinder.prototype.go = function () {
+                this.buildScaler();
+                var amplitude = new mathis.XYZ(Math.max(1, this.maxs.x - this.mins.x), Math.max(1, this.maxs.y - this.mins.y), Math.max(1, this.maxs.z - this.mins.z));
+                var centersOfFirstList = {};
+                for (var i = 0; i < this.firstList.length; i++) {
+                    var val = this.firstList[i];
+                    var resx = Math.floor((val.x - this.mins.x) / amplitude.x * this.nbDistinctPoint);
+                    var resy = Math.floor((val.y - this.mins.y) / amplitude.y * this.nbDistinctPoint);
+                    var resz = Math.floor((val.z - this.mins.z) / amplitude.z * this.nbDistinctPoint);
+                    centersOfFirstList[resx + ',' + resy + ',' + resz] = i;
+                }
+                var res = {};
+                for (var i = 0; i < this.secondList.length; i++) {
+                    var val = this.secondList[i];
+                    var resx = Math.floor((val.x - this.mins.x) / amplitude.x * this.nbDistinctPoint);
+                    var resy = Math.floor((val.y - this.mins.y) / amplitude.y * this.nbDistinctPoint);
+                    var resz = Math.floor((val.z - this.mins.z) / amplitude.z * this.nbDistinctPoint);
+                    var center = centersOfFirstList[resx + ',' + resy + ',' + resz];
+                    if (center != null && this.firstList[center] != this.secondList[i])
+                        res[center] = i;
+                }
+                return res;
+            };
+            CloseXYZfinder.prototype.buildScaler = function () {
+                var _this = this;
+                this.firstList.forEach(function (v) {
+                    if (v.x < _this.mins.x)
+                        _this.mins.x = v.x;
+                    if (v.y < _this.mins.y)
+                        _this.mins.y = v.y;
+                    if (v.z < _this.mins.z)
+                        _this.mins.z = v.z;
+                    if (v.x > _this.maxs.x)
+                        _this.maxs.x = v.x;
+                    if (v.y > _this.maxs.y)
+                        _this.maxs.y = v.y;
+                    if (v.z > _this.maxs.z)
+                        _this.maxs.z = v.z;
+                });
+                mathis.cc(this.mins, this.maxs);
+            };
+            return CloseXYZfinder;
+        })();
+        geometry.CloseXYZfinder = CloseXYZfinder;
+    })(geometry = mathis.geometry || (mathis.geometry = {}));
     var LineInterpoler = (function () {
         function LineInterpoler(points) {
             this.nbSubdivisions = 10;
@@ -2948,7 +2996,7 @@ var mathis;
                 this.createPolygonesFromSmallestTrianglesAnSquares();
             }
             if (this.borderTJonction != null)
-                throw 'boder was already computed';
+                throw 'border was already computed';
             this.borderTJonction = {};
             for (var _i = 0, _a = this.mamesh.vertices; _i < _a.length; _i++) {
                 var central = _a[_i];
@@ -3482,7 +3530,9 @@ var mathis;
                         positionNormals[indices[k + 1]].add(triangleNormals[triangleIndex]);
                         positionNormals[indices[k + 2]].add(triangleNormals[triangleIndex]);
                     }
-                    positionNormals.forEach(function (v) { return v.normalize(); });
+                    positionNormals.forEach(function (v) {
+                        v.normalize();
+                    });
                 }
                 else {
                     var aZero = new mathis.XYZ(0, 0, 0);
@@ -3619,13 +3669,100 @@ var mathis;
         engine = new BABYLON.Engine(canvas, true);
         scene = new BABYLON.Scene(engine);
         scene.clearColor = new BABYLON.Color3(.5, .5, .5);
-        var light0 = new BABYLON.HemisphericLight("Hemi0", new BABYLON.Vector3(-1, 0, 0), scene);
+        var light0 = new BABYLON.HemisphericLight("Hemi0", new BABYLON.Vector3(-1, 0, -0.7), scene);
         light0.diffuse = new BABYLON.Color3(1, 1, 1);
         light0.specular = new BABYLON.Color3(0.5, 0.5, 0.5);
         light0.groundColor = new BABYLON.Color3(0, 0, 0);
         var mmc = new mathis.MameshCreator();
-        var testType = 'torusTri';
+        var testType = 'torusDecay';
         switch (testType) {
+            case 'cylinderSpiral':
+                {
+                    var macam = new mathis.Macamera(scene);
+                    macam.trueCamPos.position = new mathis.XYZ(0, 0, -10);
+                    macam.currentGrabber.center = new mathis.XYZ(0, 0, 0);
+                    macam.currentGrabber.radius = 1.5;
+                    macam.useFreeModeWhenCursorOutOfGrabber = true;
+                    macam.currentGrabber.drawGrabber = true;
+                    macam.go();
+                    macam.attachControl(canvas);
+                    var mamesh = new mathis.Mamesh();
+                    var meshMaker = new mathis.flat.Cartesian(mamesh);
+                    meshMaker.makeLinks = true;
+                    meshMaker.nbX = 10;
+                    meshMaker.maxX = 2 * Math.PI;
+                    meshMaker.nbY = 5;
+                    meshMaker.minY = 0;
+                    meshMaker.maxY = 2 * Math.PI;
+                    meshMaker.cornersAreSharp = true;
+                    meshMaker.addSquare = true;
+                    meshMaker.nbVerticalDecays = 0;
+                    meshMaker.nbHorizontalDecays = 1;
+                    meshMaker.borderStickingVertical = mathis.flat.StickingMode.none;
+                    meshMaker.borderStickingHorizontal = mathis.flat.StickingMode.simple;
+                    meshMaker.go();
+                    mamesh.fillLineCatalogue();
+                    mamesh.vertices.forEach(function (vertex) {
+                        var v = vertex.position.x;
+                        var u = vertex.position.y;
+                        vertex.position.x = Math.cos(u);
+                        vertex.position.y = Math.sin(u);
+                        vertex.position.z = v;
+                    });
+                    mathis.cc(mamesh.toString());
+                    var lll = new mathis.visu3d.LinesVisu(mamesh, scene);
+                    lll.smoothStyle = mathis.LineInterpoler.type.none;
+                    lll.radiusFunction = mathis.visu3d.LinesVisu.constantRadius(0.02);
+                    lll.go();
+                    var bab = new MameshToBabmesh(mamesh, scene);
+                    bab.go();
+                }
+                break;
+            case 'torusDecay':
+                {
+                    var r = 0.8;
+                    var a = 2;
+                    var macam = new mathis.Macamera(scene);
+                    macam.trueCamPos.position = new mathis.XYZ(0, 0, -10);
+                    macam.currentGrabber.center = new mathis.XYZ(0, 0, 0);
+                    macam.currentGrabber.radius = a + r;
+                    macam.showPredefinedConsoleLog = false;
+                    macam.currentGrabber.drawGrabber = false;
+                    macam.go();
+                    macam.attachControl(canvas);
+                    var mamesh = new mathis.Mamesh();
+                    var meshMaker = new mathis.flat.Cartesian(mamesh);
+                    meshMaker.makeLinks = true;
+                    meshMaker.nbX = 10;
+                    meshMaker.nbY = 10;
+                    meshMaker.minX = 0;
+                    meshMaker.maxX = 2 * Math.PI;
+                    meshMaker.minY = 0;
+                    meshMaker.maxY = 2 * Math.PI;
+                    meshMaker.nbVerticalDecays = 1;
+                    meshMaker.nbHorizontalDecays = 1;
+                    meshMaker.borderStickingHorizontal = mathis.flat.StickingMode.none;
+                    meshMaker.borderStickingVertical = mathis.flat.StickingMode.none;
+                    meshMaker.go();
+                    mamesh.fillLineCatalogue();
+                    mathis.cc(mamesh.toString());
+                    mamesh.vertices.forEach(function (vertex) {
+                        var u = vertex.position.x;
+                        var v = vertex.position.y;
+                        vertex.position.x = (r * Math.cos(u) + a) * Math.cos((v));
+                        vertex.position.y = (r * Math.cos(u) + a) * Math.sin((v));
+                        vertex.position.z = r * Math.sin(u);
+                    });
+                    var lll = new mathis.visu3d.LinesVisu(mamesh, scene);
+                    lll.smoothStyle = mathis.LineInterpoler.type.none;
+                    lll.radiusFunction = mathis.visu3d.LinesVisu.constantRadius(0.02);
+                    lll.go();
+                    var bab = new MameshToBabmesh(mamesh, scene);
+                    bab.alpha = 1;
+                    bab.duplicatePositionsWhenNormalsAreTooFarr = false;
+                    var vertexData = bab.go();
+                }
+                break;
             case 'honeyComb':
                 {
                     var macam = new mathis.Macamera(scene);
@@ -3741,46 +3878,6 @@ var mathis;
                     var vertexData = bab.go();
                 }
                 break;
-            case 'postProcess':
-                {
-                    var camera = new BABYLON.ArcRotateCamera("toto", 0, 0, -10, new BABYLON.Vector3(0, 0, 0), scene);
-                    camera.lowerBetaLimit = 0.01;
-                    camera.upperBetaLimit = Math.PI;
-                    camera.attachControl(canvas);
-                    var mamesh = new mathis.Mamesh();
-                    var meshMaker = new mathis.flat.Cartesian(mamesh);
-                    meshMaker.makeLinks = true;
-                    meshMaker.nbX = 30;
-                    meshMaker.maxX = 2 * Math.PI;
-                    meshMaker.nbY = 6;
-                    meshMaker.minY = -1;
-                    meshMaker.maxY = +1;
-                    meshMaker.cornersAreSharp = true;
-                    meshMaker.addSquare = true;
-                    meshMaker.go();
-                    mamesh.fillLineCatalogue();
-                    mamesh.vertices.forEach(function (vertex) {
-                        var u = vertex.position.x;
-                        var v = vertex.position.y;
-                        vertex.position.x = (2 - v * Math.sin(u / 2)) * Math.sin(u);
-                        vertex.position.y = (2 - v * Math.sin(u / 2)) * Math.cos(u);
-                        vertex.position.z = v * Math.cos(u / 2);
-                    });
-                    var lll = new mathis.visu3d.LinesVisu(mamesh, scene);
-                    lll.radiusFunction = null;
-                    lll.go();
-                    var bab = new MameshToBabmesh(mamesh);
-                    bab.duplicatePositionsWhenNormalsAreTooFarr = true;
-                    var vertexData = bab.go();
-                    var mat = new BABYLON.StandardMaterial("mat1", scene);
-                    mat.alpha = 0.5;
-                    mat.diffuseColor = new BABYLON.Color3(1, 0.2, 0.2);
-                    mat.backFaceCulling = true;
-                    var babMesh = new BABYLON.Mesh(name, scene);
-                    vertexData.applyToMesh(babMesh);
-                    babMesh.material = mat;
-                }
-                break;
             case 'squareTriBottomDicho':
                 {
                     var mamesh = mmc.createSquareWithTwoDiag(true);
@@ -3851,6 +3948,7 @@ var mathis;
                     meshMaker.maxY = +1;
                     meshMaker.cornersAreSharp = true;
                     meshMaker.addSquare = true;
+                    meshMaker.nbVerticalDecays = 1;
                     meshMaker.borderStickingVertical = mathis.flat.StickingMode.inverse;
                     meshMaker.borderStickingHorizontal = mathis.flat.StickingMode.none;
                     meshMaker.go();
@@ -3863,46 +3961,6 @@ var mathis;
                         vertex.position.z = v * Math.cos(u / 2);
                     });
                     var lll = new mathis.visu3d.LinesVisu(mamesh, scene);
-                    lll.radiusFunction = mathis.visu3d.LinesVisu.constantRadius(0.02);
-                    lll.go();
-                    var bab = new MameshToBabmesh(mamesh, scene);
-                    bab.go();
-                }
-                break;
-            case 'cylinderSpiral':
-                {
-                    var macam = new mathis.Macamera(scene);
-                    macam.trueCamPos.position = new mathis.XYZ(0, 0, -10);
-                    macam.currentGrabber.center = new mathis.XYZ(0, 0, 0);
-                    macam.currentGrabber.radius = 1.5;
-                    macam.useFreeModeWhenCursorOutOfGrabber = false;
-                    macam.currentGrabber.drawGrabber = true;
-                    macam.go();
-                    macam.attachControl(canvas);
-                    var mamesh = new mathis.Mamesh();
-                    var meshMaker = new mathis.flat.Cartesian(mamesh);
-                    meshMaker.makeLinks = true;
-                    meshMaker.nbX = 10;
-                    meshMaker.maxX = 2 * Math.PI;
-                    meshMaker.nbY = 3;
-                    meshMaker.minY = -1;
-                    meshMaker.maxY = 1;
-                    meshMaker.cornersAreSharp = true;
-                    meshMaker.addSquare = true;
-                    meshMaker.borderStickingVertical = mathis.flat.StickingMode.decay;
-                    meshMaker.borderStickingHorizontal = mathis.flat.StickingMode.none;
-                    meshMaker.go();
-                    mamesh.fillLineCatalogue();
-                    mamesh.vertices.forEach(function (vertex) {
-                        var u = vertex.position.x;
-                        var v = vertex.position.y;
-                        vertex.position.x = Math.cos(u);
-                        vertex.position.y = Math.sin(u);
-                        vertex.position.z = v + u / (2 * Math.PI * (meshMaker.nbY - 1)) * (meshMaker.maxY - meshMaker.minY);
-                    });
-                    mathis.cc(mamesh.toString());
-                    var lll = new mathis.visu3d.LinesVisu(mamesh, scene);
-                    lll.smoothStyle = mathis.LineInterpoler.type.none;
                     lll.radiusFunction = mathis.visu3d.LinesVisu.constantRadius(0.02);
                     lll.go();
                     var bab = new MameshToBabmesh(mamesh, scene);
@@ -3929,7 +3987,7 @@ var mathis;
                     meshMaker.maxY = 2;
                     meshMaker.cornersAreSharp = true;
                     meshMaker.addSquare = true;
-                    meshMaker.borderStickingVertical = mathis.flat.StickingMode.decay;
+                    meshMaker.borderStickingVertical = mathis.flat.StickingMode.simple;
                     meshMaker.borderStickingHorizontal = mathis.flat.StickingMode.none;
                     meshMaker.go();
                     mamesh.fillLineCatalogue();
@@ -4206,6 +4264,17 @@ var mathis;
             var hermite = [];
             mathis.geo.hermiteSpline(vect0, tan0, vect2, tan2, 2, hermite);
             bilanGeo.assertTrue(hermite[1].almostEqual(new mathis.XYZ(1, 0.25, 0)));
+        }
+        {
+            var list = [new mathis.XYZ(0, 0, 0), new mathis.XYZ(0, 0, 1), new mathis.XYZ(0, 0, 2), new mathis.XYZ(-10, 0, 0), new mathis.XYZ(0, 0, 0), new mathis.XYZ(0, 0, 1), new mathis.XYZ(0, 0, 2)];
+            var close_1 = new mathis.geometry.CloseXYZfinder(list, list);
+            var res = close_1.go();
+            bilanGeo.assertTrue(JSON.stringify({ 4: 0, 5: 1, 6: 2 }) == JSON.stringify(res));
+            var list2 = [new mathis.XYZ(0.0001, 0, 0), new mathis.XYZ(0, 0, 1.0001), new mathis.XYZ(0, 0, 2), new mathis.XYZ(-10, 0, 0)];
+            var close2 = new mathis.geometry.CloseXYZfinder(list, list2);
+            close2.nbDistinctPoint = 100;
+            var res2 = close_1.go();
+            bilanGeo.assertTrue(JSON.stringify({ 4: 0, 5: 1, 6: 2 }) == JSON.stringify(res2));
         }
         return bilanGeo;
     }
@@ -4513,15 +4582,6 @@ var mathis;
             return mamesh;
         }
         {
-            var mamesh = rectangleWithDifferentsParameters(false, true, false);
-            var mmm = new mathis.MameshManipulator(mamesh);
-            mmm.makeLinksFromTrianglesAndSquares();
-            mamesh.fillLineCatalogue();
-            var mamesh2 = rectangleWithDifferentsParameters(true, false, false);
-            mamesh2.fillLineCatalogue();
-            bilan.assertTrue(mamesh.equalAsGraph(mamesh2));
-        }
-        {
             var mamesh = rectangleWithDifferentsParameters(false, true, true);
             var mmm = new mathis.MameshManipulator(mamesh);
             mmm.makeLinksFromTrianglesAndSquares();
@@ -4540,7 +4600,6 @@ var mathis;
             meshMaker.addSquare = true;
             meshMaker.borderStickingVertical = mathis.flat.StickingMode.inverse;
             meshMaker.go();
-            mathis.cc(mamesh.toString());
             mamesh.fillLineCatalogue();
         }
         {
@@ -4583,10 +4642,23 @@ var mathis;
             meshMaker.nbY = 2;
             meshMaker.addSquare = true;
             meshMaker.go();
-            mathis.cc(mamesh.toString());
         }
         return bilan;
     }
     mathis.flatTest = flatTest;
+})(mathis || (mathis = {}));
+/**
+ * Created by vigon on 22/02/2016.
+ */
+var mathis;
+(function (mathis) {
+    function testGraph() {
+        var bilan = new mathis.Bilan(0, 0);
+        {
+            var vert1 = new mathis.Vertex(0);
+        }
+        return bilan;
+    }
+    mathis.testGraph = testGraph;
 })(mathis || (mathis = {}));
 //# sourceMappingURL=MATHIS.js.map

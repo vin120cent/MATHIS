@@ -180,51 +180,28 @@ module mathis {
 
 
 
+        {
+
+            let list=[new XYZ(0,0,0),new XYZ(0,0,1),new XYZ(0,0,2),new XYZ(-10,0,0),new XYZ(0,0,0),new XYZ(0,0,1),new XYZ(0,0,2)]
+            let close=new geometry.CloseXYZfinder(list,list)
+            let res=close.go()
+            bilanGeo.assertTrue(JSON.stringify({4: 0, 5: 1, 6: 2})==JSON.stringify(res))
+
+
+            let list2=[new XYZ(0.0001,0,0),new XYZ(0,0,1.0001),new XYZ(0,0,2),new XYZ(-10,0,0)]
+            let close2=new geometry.CloseXYZfinder(list,list2)
+            close2.nbDistinctPoint=100
+            let res2=close.go()
+            bilanGeo.assertTrue(JSON.stringify({4: 0, 5: 1, 6: 2})==JSON.stringify(res2))
+
+
+        }
         
 
-        //{
-        //
-        //    let res=XYZ.newZero()
-        //    geo.intersectionBetweenRayAndSphereFromRef(new XYZ(0,0,-1),new XYZ(0,0,1),1,new XYZ(0,0,0),res)
-        //    bilanGeo.assertTrue(res.almostEqual(new XYZ(0,0,-1)))
-        //    cc(res)
-        //    let res2=XYZ.newZero()
-        //    geo.intersectionBetweenRayAndSphereFromRef(new XYZ(0,1,-1),new XYZ(0,0,1),1,new XYZ(0,1,-1),res2)
-        //    bilanGeo.assertTrue(res2.almostEqual(new XYZ(0,1,0)))
-        //
-        //}
-
-        //{
-        //    let res=XYZ.newZero()
-        //    let ok=geo.intersectionBetweenRayAndSphereFromRef(new XYZ(0,0,5),new XYZ(0,0,1),1,new XYZ(0,0,0),true,res)
-        //    bilanGeo.assertTrue(!ok)
-        //    ok=geo.intersectionBetweenRayAndSphereFromRef(new XYZ(0,0,-1.01),new XYZ(0,0,1),1,new XYZ(0,0,0),true,res)
-        //    bilanGeo.assertTrue(ok)
-        //    ok=geo.intersectionBetweenRayAndSphereFromRef(new XYZ(0,0,0.9),new XYZ(0,0,1),1,new XYZ(0,0,0),true,res)
-        //    bilanGeo.assertTrue(!ok)
-        //    ok=geo.intersectionBetweenRayAndSphereFromRef(new XYZ(0,0,0.9),new XYZ(0,0,1),1,new XYZ(0,0,0),false,res)
-        //    bilanGeo.assertTrue(ok)
-        //    ok=geo.intersectionBetweenRayAndSphereFromRef(new XYZ(0,0,-0.9),new XYZ(0,0,1),1,new XYZ(0,0,0),false,res)
-        //    bilanGeo.assertTrue(ok)
-        //
-        //}
 
 
-        //
-        //let xViewPort=100
-        //let yViewPort=200
-        //let x=50
-        //let y=100
-        //
-        //let _projectionMatrix=BABYLON.Matrix.Zero()
-        //BABYLON.Matrix.PerspectiveFovLHToRef(0.8, 1, 0.1, 1000, _projectionMatrix);
-        //
-        //let viewMat=BABYLON.Matrix.Identity()
-        //let source=new BABYLON.Vector3(1,2,0);
-        //let resMathis=XYZ.newZero()
-        //geo.unproject(source,xViewPort,yViewPort,viewMat,_projectionMatrix,resMathis,BABYLON.Matrix.Identity())
-        //let resBab=BABYLON.Vector3.Unproject(source,xViewPort,yViewPort,BABYLON.Matrix.Identity(),viewMat,_projectionMatrix)
-        //bilanGeo.assertTrue(basic.xyzAlmostEquality(resBab,resMathis))
+
+
 
 
 

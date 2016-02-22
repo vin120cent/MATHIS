@@ -23,16 +23,16 @@ module mathis{
             return mamesh
         }
 
-        {
-            let mamesh=rectangleWithDifferentsParameters(false,true,false)
-            let mmm=new MameshManipulator(mamesh)
-            mmm.makeLinksFromTrianglesAndSquares()
-            mamesh.fillLineCatalogue()
-
-            let mamesh2=rectangleWithDifferentsParameters(true,false,false)
-            mamesh2.fillLineCatalogue()
-            bilan.assertTrue(mamesh.equalAsGraph(mamesh2))
-        }
+        //{
+        //    let mamesh=rectangleWithDifferentsParameters(false,true,false)
+        //    let mmm=new MameshManipulator(mamesh)
+        //    mmm.makeLinksFromTrianglesAndSquares()
+        //    mamesh.fillLineCatalogue()
+        //
+        //    let mamesh2=rectangleWithDifferentsParameters(true,false,false)
+        //    mamesh2.fillLineCatalogue()
+        //    bilan.assertTrue(mamesh.equalAsGraph(mamesh2))
+        //}
 
         {
             let mamesh=rectangleWithDifferentsParameters(false,true,true)
@@ -58,7 +58,6 @@ module mathis{
             meshMaker.borderStickingVertical=flat.StickingMode.inverse
             meshMaker.go()
 
-            cc(mamesh.toString())
 
             mamesh.fillLineCatalogue()
             //bilan.assertTrue(mamesh.loopLines.length==1 && mamesh.straightLines.length==3)
@@ -137,7 +136,6 @@ module mathis{
             meshMaker.go()
 
 
-            cc(mamesh.toString())
             ///mamesh.fillLineCatalogue()
 
         }

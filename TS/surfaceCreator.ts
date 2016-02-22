@@ -707,7 +707,7 @@ module mathis {
                 this.createPolygonesFromSmallestTrianglesAnSquares()
             }
 
-            if (this.borderTJonction!=null) throw 'boder was already computed'
+            if (this.borderTJonction!=null) throw 'border was already computed'
             this.borderTJonction={}
 
 

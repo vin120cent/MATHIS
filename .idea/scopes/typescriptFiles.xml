@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="typescriptFiles" pattern="file[MATHIS]:tests/*||file[MATHIS]:TS/*||file[MATHIS]:testWithBabylon/*" />
+</component>

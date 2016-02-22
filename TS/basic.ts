@@ -87,10 +87,17 @@ module mathis {
             return this
         }
 
-        normalize():XYZ{
+        normalize(throwExceptionIfZeroVector=false):XYZ{
             var norm=geo.norme(this)
             if (norm<basic.epsilon) console.log('be careful, you have normalized a very small vector')
-            if (norm==0)  throw 'impossible to normalize the zero vector'
+            if (norm==0)  {
+                if (throwExceptionIfZeroVector) throw 'impossible to normalize the zero vector'
+                else {
+                    this.changeFrom(1,0,0)
+                    return this
+                }
+            }
+
             return this.scale(1/norm)
         }
 
@@ -246,40 +253,22 @@ module mathis {
 
         id:number
 
-        /** redondance volontaire : l' ensemble des voisins peut-être obtenu via le tablea voisins ou  */
-        //voisins=new Array<Vertex>()
         links=new Array<Link>()
 
 
-        //coVoisins=new Array<Vertex>()
-        //isBorder=null
-        isSharpAngle=false // if the user decide that it is an angle, then we do not associate opposite fle
+        isSharpAngle=false // if the user decide that it is a sharp angle, then we do not associate opposite link
 
         position:XYZ
         normal:XYZ
         dichoLevel:number
 
-        param:XYZ
 
+        param:XYZ
         markers:Vertex.Markers[]=[]
 
         //mapParam:XYZ
 
-
         constructor( id:number){this.id=id}
-
-        //getCovoisin(vertex:Vertex){
-        //    let voisinIndex=this.voisins.indexOf(vertex)
-        //    if (voisinIndex==-1) throw "be careful, you look for a co-voisin for a non existing voisin "
-        //    return this.coVoisins[voisinIndex]
-        //}
-
-
-        //setCovoisin(cellVoi:Vertex,coVoi:Vertex):void{
-        //    let index:number=this.voisins.indexOf(cellVoi);
-        //    if (index==-1) throw "l' argument doit être un voisin";
-        //    this.coVoisins[index]=coVoi;
-        //}
 
         getOpposite(vert1):Vertex{
             let fle=this.findLink(vert1)
@@ -297,9 +286,9 @@ module mathis {
             return null
         }
 
-        setVoisinCouple(cell1:Vertex,cell2:Vertex,checkExistiging=false):void{
+        setVoisinCouple(cell1:Vertex,cell2:Vertex,suppressExisting=false):void{
 
-            if (checkExistiging){
+            if (suppressExisting){
                     this.suppressOneVoisin(cell1,false)
                     this.suppressOneVoisin(cell2,false)
             }
@@ -312,17 +301,73 @@ module mathis {
 
         }
 
+        setVoisinCoupleKeepingExistingAtBest(cell1:Vertex,cell2:Vertex){
+
+            let link1=this.findLink(cell1)
+            let link2=this.findLink(cell2)
+
+            if (link1==null && link2==null) {
+                let fle1=new Link(cell1)
+                let fle2=new Link(cell2)
+                fle1.opposite=fle2
+                fle2.opposite=fle1
+                this.links.push(fle1,fle2)
+            }
+
+            else if (link1!=null && link2==null ){
+
+                if (link1.opposite==null) this.setVoisinCouple(cell1,cell2,true)
+                else {
+                    removeFromArray(this.links,link1)
+                    link1.opposite.opposite=null
+                    this.setVoisinSingle(cell1)
+                    this.setVoisinSingle(cell2)
+                }
+
+            }
+
+            else if (link2!=null && link1==null ){
+
+                if (link2.opposite==null) this.setVoisinCouple(cell2,cell1,true)
+                else {
+                    removeFromArray(this.links,link2)
+                    link2.opposite.opposite=null
+                    this.setVoisinSingle(cell1)
+                    this.setVoisinSingle(cell2)
+                }
+
+            }
+
+            else if (link1!=null && link2!=null){
+
+                if (link1.opposite!=link2){
+                    link1.opposite.opposite=null
+                    link1.opposite=null
+                    link2.opposite.opposite=null
+                    link2.opposite=null
+                }
+
+            }
+
+
+
+
+
+        }
+
+
+
         setVoisinSingle(cell1:Vertex,checkExistiging=false):void{
             if (checkExistiging) this.suppressOneVoisin(cell1,false)
             this.links.push(new Link(cell1))
         }
 
-        suppressOneVoisin(voisin:Vertex,checkVoisinExists:boolean):void{
+        suppressOneVoisin(voisin:Vertex,exceptionIfNonExisting:boolean):void{
 
             let link=this.findLink(voisin)
 
             if (link==null) {
-                if (checkVoisinExists) throw "a voisin to suppress is not present"
+                if (exceptionIfNonExisting) throw "a voisin to suppress is not present"
                 return
             }
 

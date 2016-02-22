@@ -260,7 +260,12 @@ module mathis{
 
                     }
 
-                    positionNormals.forEach((v:XYZ)=>v.normalize())
+
+
+                    positionNormals.forEach((v:XYZ)=>{
+
+                        v.normalize()
+                    })
 
                 }
                 else{

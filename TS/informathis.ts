@@ -82,9 +82,6 @@ module mathis{
     }
 
 
-
-
-
     /** from http://www.javascripter.net/faq/stylesc.htm
      *
      auto        move           no-drop      col-resize

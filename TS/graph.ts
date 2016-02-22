@@ -5,6 +5,7 @@
 module mathis{
 
 
+    //TODO emplacer par une référence sur le link
     class TwoInt{
         public a:number;
         public b:number;
@@ -158,6 +159,13 @@ module mathis{
 
 
 
+    export module graph{
+
+
+
+
+
+    }
 
 
 

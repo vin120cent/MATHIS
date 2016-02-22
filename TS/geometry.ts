@@ -977,6 +977,100 @@ module mathis {
     //
     //
 
+
+
+    export module geometry{
+
+
+        export class CloseXYZfinder{
+
+
+            firstList:XYZ[]
+            secondList:XYZ[]
+            nbDistinctPoint=100000
+
+            constructor(firstList:XYZ[],secondList:XYZ[]){
+                this.firstList=firstList
+                this.secondList=secondList
+            }
+
+
+            go ():{[id:number]:number}{
+
+                this.buildScaler()
+                let amplitude=new XYZ(Math.max(1,this.maxs.x-this.mins.x),Math.max(1,this.maxs.y-this.mins.y),Math.max(1,this.maxs.z-this.mins.z) )
+
+                let centersOfFirstList: {[id:string]:number}={}
+
+
+                for (let i=0; i<this.firstList.length; i++){
+                    let val=this.firstList[i]
+                    let resx=Math.floor( (val.x-this.mins.x)/amplitude.x*this.nbDistinctPoint)
+                    let resy=Math.floor( (val.y-this.mins.y)/amplitude.y*this.nbDistinctPoint)
+                    let resz=Math.floor( (val.z-this.mins.z)/amplitude.z*this.nbDistinctPoint)
+                    centersOfFirstList[resx+','+resy+','+resz]=i
+                }
+
+
+                let res:{[id:number]:number}={}
+
+
+                for (let i=0; i<this.secondList.length; i++){
+                    let val=this.secondList[i]
+                    let resx=Math.floor( (val.x-this.mins.x)/ amplitude.x*this.nbDistinctPoint)
+                    let resy=Math.floor( (val.y-this.mins.y)/amplitude.y*this.nbDistinctPoint)
+                    let resz=Math.floor( (val.z-this.mins.z)/amplitude.z*this.nbDistinctPoint)
+                    let center=centersOfFirstList[resx+','+resy+','+resz]
+                    if (center!=null && this.firstList[center]!=this.secondList[i] ) res[center]=i
+
+                }
+
+                return res
+
+
+            }
+
+            private mins=new XYZ(Number.MAX_VALUE,Number.MAX_VALUE,Number.MAX_VALUE)
+            private maxs=new XYZ(-Number.MAX_VALUE,-Number.MAX_VALUE,-Number.MAX_VALUE)
+
+            private buildScaler(){
+
+                this.firstList.forEach((v:XYZ)=>{
+
+                    if (v.x<this.mins.x) this.mins.x=v.x
+                    if (v.y<this.mins.y) this.mins.y=v.y
+                    if (v.z<this.mins.z) this.mins.z=v.z
+
+                    if (v.x>this.maxs.x) this.maxs.x=v.x
+                    if (v.y>this.maxs.y) this.maxs.y=v.y
+                    if (v.z>this.maxs.z) this.maxs.z=v.z
+
+                })
+
+                cc(this.mins, this.maxs)
+
+
+
+            }
+
+
+
+
+
+
+
+
+
+
+        }
+
+
+    }
+
+
+
+
+
    export class LineInterpoler{
 
 
