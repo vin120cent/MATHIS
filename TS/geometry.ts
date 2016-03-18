@@ -2,6 +2,8 @@
 module mathis {
 
 
+
+
     /**
      * charte :
      * 1/ les argument d' entré ne doivent pas être modifié, (sauf si ils sont mis aussi en sortie)
@@ -9,7 +11,7 @@ module mathis {
      * Ainsi une méthode doSomething(in1,in2,out1,out2) peut-être appelée comme ceci doSomething(in1,in2,in1,in2)
      *
      * */
-    export class Geometry {
+    export class Geo {
 
 
 
@@ -59,6 +61,13 @@ module mathis {
         xyzwAlmostEquality(vec1:XYZW, vec2:XYZW) {
             return Math.abs(vec1.x - vec2.x) < this.epsilon && Math.abs(vec1.y - vec2.y) < this.epsilon && Math.abs(vec1.z - vec2.z) < this.epsilon && Math.abs(vec1.w - vec2.w) < this.epsilon
         }
+
+        almostLogicalEqual(quat1:XYZW,quat2:XYZW){
+            return geo.xyzwAlmostEquality(quat1,quat2)||
+                (geo.almostEquality(quat1.x,-quat2.x)&&geo.almostEquality(quat1.y,-quat2.y)&&geo.almostEquality(quat1.z,-quat2.z)&&geo.almostEquality(quat1.w,-quat2.w) )
+        }
+
+
 
 
         xyzAlmostZero(vec:XYZ) {
@@ -131,7 +140,7 @@ module mathis {
         }
 
 
-        private _resultTransp=basic.newZeroMat()
+        private _resultTransp=new MM()
         transpose(matrix: MM,result:MM ):void{
 
             this._resultTransp.m[0] = matrix.m[0];
@@ -153,7 +162,7 @@ module mathis {
             this._resultTransp.m[13] = matrix.m[7];
             this._resultTransp.m[14] = matrix.m[11];
             this._resultTransp.m[15] = matrix.m[15];
-            basic.copyMat(this._resultTransp,result)
+            geo.copyMat(this._resultTransp,result)
 
         }
 
@@ -218,23 +227,23 @@ module mathis {
 
 
 
-        private baryResult=basic.newXYZ(0,0,0)
-        private _scaled=basic.newXYZ(0,0,0)
+        private baryResult=new XYZ(0,0,0)
+        private _scaled=new XYZ(0,0,0)
         baryCenter(xyzs:XYZ[],weights:number[],result:XYZ):void{
             this.baryResult.x=0
             this.baryResult.y=0
             this.baryResult.z=0
 
             for (var i=0;i<xyzs.length;i++){
-                basic.copyXYZ(xyzs[i],this._scaled)
+                geo.copyXYZ(xyzs[i],this._scaled)
                 this.scale(this._scaled,weights[i],this._scaled)
                 this.add(this.baryResult,this._scaled,this.baryResult)
             }
-            basic.copyXYZ(this.baryResult,result)
+            geo.copyXYZ(this.baryResult,result)
 
         }
 
-        //private betweenRes=basic.newXYZ(0,0,0)
+        //private betweenRes=new XYZ(0,0,0)
         between(v1:XYZ,v2:XYZ,alpha:number,res:XYZ):void{
             res.x=v1.x*(1-alpha)+v2.x*alpha;
             res.y=v1.y*(1-alpha)+v2.y*alpha;
@@ -243,10 +252,10 @@ module mathis {
         }
 
 
-        private _matUn=basic.newZeroMat()
-        private _source=basic.newXYZ(0,0,0)
-        unproject(source: XYZ, viewportWidth: number, viewportHeight: number,  view:MM, projection:MM,result:XYZ,world?:MM): void {
-            basic.copyXYZ(source,this._source)
+        private _matUn=new MM()
+        private _source=new XYZ(0,0,0)
+        unproject(source: XYZ, viewportWidth: number, viewportHeight: number,world:MM,  view:MM, projection:MM,result:XYZ): void {
+            geo.copyXYZ(source,this._source)
             if (world!=null){
                 this.multiplyMatMat(world,view,this._matUn)
                 this.multiplyMatMat(this._matUn,projection,this._matUn)
@@ -298,13 +307,13 @@ module mathis {
         }
 
 
-        private _axis=basic.newXYZ(0,0,0)
+        private _axis=new XYZ(0,0,0)
         axisAngleToMatrix(axis: XYZ, angle: number,result:MM): void {
             var s = Math.sin(-angle);
             var c = Math.cos(-angle);
             var c1 = 1 - c;
 
-            basic.copyXYZ(axis,this._axis)
+            geo.copyXYZ(axis,this._axis)
             this.normalize(this._axis,this._axis)
 
 
@@ -408,15 +417,30 @@ module mathis {
 
         }
 
+        private _ortBasisV1=new XYZ(0,0,0)
+        private _ortBasisV2=new XYZ(0,0,0)
+        private _ortBasisV3=new XYZ(0,0,0)
+        private _ortBasisAll=new MM()
 
+        twoVectorsToQuaternion(v1:XYZ,v2:XYZ,firstIsPreserved:boolean,result:XYZW):void{
+            if (firstIsPreserved){
+                geo.orthonormalizeKeepingFirstDirection(v1,v2,this._ortBasisV1,this._ortBasisV2)
 
+            }
+            else{
+                geo.orthonormalizeKeepingFirstDirection(v2,v1,this._ortBasisV2,this._ortBasisV1)
+
+            }
+            geo.cross(this._ortBasisV1,this._ortBasisV2,this._ortBasisV3)
+            geo.matrixFromLines(this._ortBasisV1,this._ortBasisV2,this._ortBasisV3,this._ortBasisAll)
+            geo.matrixToQuaternion(this._ortBasisAll,result)
+        }
 
         translationOnMatrix(vector3: XYZ,result:MM): void {
             result.m[12] = vector3.x;
             result.m[13] = vector3.y;
             result.m[14] = vector3.z;
         }
-
 
         quaternionToMatrix(quaternion:XYZW, result:MM):void {
             var xx = quaternion.x * quaternion.x;
@@ -445,6 +469,60 @@ module mathis {
             result.m[13] = 0;
             result.m[14] = 0;
             result.m[15] = 1.0;
+        }
+
+
+        quaternionMultiplication(q0:XYZW,q1: XYZW, result: XYZW):void {
+            var x = q0.x * q1.w + q0.y * q1.z - q0.z * q1.y + q0.w * q1.x;
+            var y = -q0.x * q1.z + q0.y * q1.w + q0.z * q1.x + q0.w * q1.y;
+            var z = q0.x * q1.y - q0.y * q1.x + q0.z * q1.w + q0.w * q1.z;
+            var w = -q0.x * q1.x - q0.y * q1.y - q0.z * q1.z + q0.w * q1.w;
+            result.x=x
+            result.y=y
+            result.z=z
+            result.w=w
+        }
+
+
+        /**a and b must be orthogonal
+         * c and d must be orthogonal*/
+
+        private tempVa=new XYZ(0,0,0)
+        private tempVb=new XYZ(0,0,0)
+        private tempVc=new XYZ(0,0,0)
+        private tempVd=new XYZ(0,0,0)
+        private tempVbb=new XYZ(0,0,0)
+        private tempMatrix1=new MM()
+        private cross1=new XYZ(0,0,0)
+        private cross2=new XYZ(0,0,0)
+
+        private quaternion1=new XYZW(0,0,0,0)
+        private quaternion2=new XYZW(0,0,0,0)
+
+        aQuaternionMovingABtoCD(a:XYZ,b:XYZ,c:XYZ,d:XYZ,result:XYZW):void{
+            /**saving, and normalising*/
+            this.tempVa.copyFrom(a).normalize();
+            this.tempVb.copyFrom(b).normalize();
+            this.tempVc.copyFrom(c).normalize();
+            this.tempVd.copyFrom(d).normalize();
+
+            /**first rotation*/
+            this.cross(this.tempVa,this.tempVc,this.cross1)
+            var angle1=Math.acos(this.dot(a, c))
+            this.axisAngleToQuaternion(this.cross1,angle1,this.quaternion1)
+            this.axisAngleToMatrix(this.cross1,angle1,this.tempMatrix1)
+
+            /**we have to transform tempVb */
+            this.multiplicationMatrixVector(this.tempMatrix1,this.tempVb,this.tempVbb)
+
+            /**second rotation*/
+            this.cross(this.tempVbb,this.tempVd,this.cross2)
+            var angle2=Math.acos(this.dot(this.tempVbb,this.tempVd))
+            this.axisAngleToQuaternion(this.cross2,angle2,this.quaternion2)
+
+            this.quaternionMultiplication(this.quaternion2,this.quaternion1,result)
+
+
         }
 
 
@@ -501,11 +579,11 @@ module mathis {
         }
 
 
-        v1nor=basic.newXYZ(0,0,0)
-        v2nor=basic.newXYZ(0,0,0)
+        v1nor=new XYZ(0,0,0)
+        v2nor=new XYZ(0,0,0)
         angleBetweenTwoVectorsRelativeToCenter( v1:XYZ, v2:XYZ,center:XYZ):number{
 
-            if (basic.xyzAlmostZero(v1) ||basic.xyzAlmostZero(v2)) {
+            if (geo.xyzAlmostZero(v1) ||geo.xyzAlmostZero(v2)) {
                 console.log('be aware: you compute angle between two vectors, one of them being almost zero')
                 return 0;
             }
@@ -515,8 +593,8 @@ module mathis {
             this.substract(v2,center,this.v2nor)
 
             this.normalize(v1,this.v1nor)
-                this.normalize(v2,this.v2nor)
-                var dotProduct=this.dot(this.v1nor,this.v2nor)
+            this.normalize(v2,this.v2nor)
+            var dotProduct=this.dot(this.v1nor,this.v2nor)
 
 
 
@@ -533,16 +611,16 @@ module mathis {
 
 
 
-        private _quat0 = basic.newXYZW(0, 0, 0, 0)
-        private _quat1 = basic.newXYZW(0, 0, 0, 0)
-        private _quatAlpha = basic.newXYZW(0, 0, 0, 0)
+        private _quat0 = new XYZW(0, 0, 0, 0)
+        private _quat1 = new XYZW(0, 0, 0, 0)
+        private _quatAlpha = new XYZW(0, 0, 0, 0)
 
-        private _mat0 = basic.newZeroMat()
-        private _mat1 = basic.newZeroMat()
-        private _matAlpha = basic.newZeroMat()
+        private _mat0 = new MM()
+        private _mat1 = new MM()
+        private _matAlpha = new MM()
 
-        private _c0 = basic.newXYZ(0, 0, 0)
-        private _c1 = basic.newXYZ(0, 0, 0)
+        private _c0 = new XYZ(0, 0, 0)
+        private _c1 = new XYZ(0, 0, 0)
 
         slerpTwoOrthogonalVectors(a0:XYZ, b0:XYZ, a1:XYZ, b1:XYZ, alpha:number, aAlpha:XYZ, bAlpha:XYZ):void {
 
@@ -557,8 +635,8 @@ module mathis {
             this.slerp(this._quat0, this._quat1, alpha, this._quatAlpha)
             this.quaternionToMatrix(this._quatAlpha, this._matAlpha)
 
-            basic.copyXyzFromFloat(this._matAlpha.m[0], this._matAlpha.m[1], this._matAlpha.m[2], aAlpha)
-            basic.copyXyzFromFloat(this._matAlpha.m[4], this._matAlpha.m[5], this._matAlpha.m[7], bAlpha)
+            geo.copyXyzFromFloat(this._matAlpha.m[0], this._matAlpha.m[1], this._matAlpha.m[2], aAlpha)
+            geo.copyXyzFromFloat(this._matAlpha.m[4], this._matAlpha.m[5], this._matAlpha.m[7], bAlpha)
 
         }
 
@@ -605,48 +683,55 @@ module mathis {
         }
 
 
-        _crossResult=basic.newXYZ(0,0,0)
+        _crossResult=new XYZ(0,0,0)
         cross(left:XYZ, right:XYZ, result:XYZ):void {
             this._crossResult.x = left.y * right.z - left.z * right.y;
             this._crossResult.y = left.z * right.x - left.x * right.z;
             this._crossResult.z = left.x * right.y - left.y * right.x;
-            basic.copyXYZ(this._crossResult,result)
+            geo.copyXYZ(this._crossResult,result)
         }
 
 
-        v1forSubstraction = basic.newXYZ(0, 0, 0)
-        randV2 = basic.newXYZ(0, 0, 0)
-        _result1=basic.newXYZ(0,0,0)
-        _result2=basic.newXYZ(0,0,0)
+        v1forSubstraction = new XYZ(0, 0, 0)
+        randV2 = new XYZ(0, 0, 0)
+        _result1=new XYZ(0,0,0)
+        _result2=new XYZ(0,0,0)
         orthonormalizeKeepingFirstDirection(v1:XYZ, v2:XYZ,result1:XYZ,result2:XYZ):void {
 
             this.normalize(v1,this._result1)
-            basic.copyXYZ(v1, this.v1forSubstraction)
+            geo.copyXYZ(v1, this.v1forSubstraction)
             this.scale(this.v1forSubstraction, this.dot(v1, v2),this.v1forSubstraction)
             this.substract(v2, this.v1forSubstraction, this._result2)
 
-            if (this.squareNorme(this._result2) < basic.epsilon) {
-                basic.copyXyzFromFloat(Math.random(), Math.random(), Math.random(), this.randV2)
+            if (this.squareNorme(this._result2) < geo.epsilon) {
+                geo.copyXyzFromFloat(Math.random(), Math.random(), Math.random(), this.randV2)
                 console.log("beware: you try to orthonormalize two co-linear vectors")
                 return this.orthonormalizeKeepingFirstDirection(v1, this.randV2,result1,result2)
             }
             this.normalize(this._result2,this._result2)
-            basic.copyXYZ(this._result1,result1)
-            basic.copyXYZ(this._result2,result2)
+            geo.copyXYZ(this._result1,result1)
+            geo.copyXYZ(this._result2,result2)
         }
+
+
+        getOneOrthogonal(vec:XYZ,result:XYZ):void{
+            if (Math.abs(vec.x)+Math.abs(vec.y)>0.0001) result.copyFromFloats(-vec.y,vec.x,0);
+            else result.copyFromFloats(0,-vec.z,vec.y);
+        }
+
 
         normalize(vec:XYZ,result:XYZ):void {
             var norme = this.norme(vec)
-            if (norme < basic.epsilon) throw "one can not normalize a the almost zero vector:" + vec
+            if (norme < geo.epsilon) throw "one can not normalize a the almost zero vector:" + vec
             this.scale(vec, 1 / norme,result)
         }
 
 
-        private spheCentToRayOri = basic.newXYZ(0, 0, 0)
-        private _resultInters=basic.newXYZ(0, 0, 0)
+        private spheCentToRayOri = new XYZ(0, 0, 0)
+        private _resultInters=new XYZ(0, 0, 0)
         intersectionBetweenRayAndSphereFromRef(rayOrigine:XYZ, rayDirection:XYZ, aRadius:number, sphereCenter:XYZ ,result1:XYZ,result2:XYZ):boolean {
 
-            basic.copyXYZ(rayOrigine, this.spheCentToRayOri)
+            geo.copyXYZ(rayOrigine, this.spheCentToRayOri)
             this.substract(this.spheCentToRayOri, sphereCenter, this.spheCentToRayOri)
 
             var a = this.squareNorme(rayDirection)
@@ -663,15 +748,15 @@ module mathis {
                 var t1 = (-b + Math.sqrt(discriminant)) / 2 / a;
                 var t2 = (-b - Math.sqrt(discriminant)) / 2 / a;
 
-                basic.copyXYZ(rayDirection, this._resultInters)
+                geo.copyXYZ(rayDirection, this._resultInters)
                 this.scale(this._resultInters, t1,this._resultInters)
                 this.add(this._resultInters, rayOrigine, this._resultInters)
-                basic.copyXYZ(this._resultInters,result1)
+                geo.copyXYZ(this._resultInters,result1)
 
-                basic.copyXYZ(rayDirection, this._resultInters)
+                geo.copyXYZ(rayDirection, this._resultInters)
                 this.scale(this._resultInters, t2,this._resultInters)
                 this.add(this._resultInters, rayOrigine, this._resultInters)
-                basic.copyXYZ(this._resultInters,result2)
+                geo.copyXYZ(this._resultInters,result2)
 
                 return true
 
@@ -679,12 +764,12 @@ module mathis {
                 ///**we are in front of the sphere : we return the smallest solution */
                 //if (t1 > 0 && t2 > 0) {
                 //    if (Math.abs(t1) < Math.abs(t2)) {
-                //        basic.copyXYZ(rayDirection, this._resultInters)
+                //        geo.copyXYZ(rayDirection, this._resultInters)
                 //        this.scale(this._resultInters, t1,this._resultInters)
                 //        this.add(this._resultInters, rayOrigine, this._resultInters)
                 //    }
                 //    else {
-                //        basic.copyXYZ(rayDirection, this._resultInters)
+                //        geo.copyXYZ(rayDirection, this._resultInters)
                 //        this.scale(this._resultInters, t2,this._resultInters)
                 //        this.add(this._resultInters, rayOrigine, this._resultInters)
                 //    }
@@ -694,20 +779,20 @@ module mathis {
                 ///** we are inside the sphere, we choose the only one which is in front of camera*/
                 //else if (t1 > 0 && t2 < 0) {
                 //    cc('inside the sphere')
-                //    basic.copyXYZ(rayDirection, this._resultInters)
+                //    geo.copyXYZ(rayDirection, this._resultInters)
                 //    this.scale(this._resultInters, t1,this._resultInters)
                 //    this.add(this._resultInters, rayOrigine, this._resultInters)
                 //}
                 //else if (t1 < 0 && t2 > 0) {
                 //    cc('inside the sphere 2')
                 //
-                //    basic.copyXYZ(rayDirection, this._resultInters)
+                //    geo.copyXYZ(rayDirection, this._resultInters)
                 //    this.scale(this._resultInters, t2,this._resultInters)
                 //    this.add(this._resultInters, rayOrigine, this._resultInters)
                 //}
                 //else return false
                 //
-                //basic.copyXYZ(this._resultInters,result)
+                //geo.copyXYZ(this._resultInters,result)
                 //return true
             }
         }
@@ -749,7 +834,7 @@ module mathis {
             this.cross(up, this._zAxis, this._xAxis)
             //Vector3.CrossToRef(up, this._zAxis, this._xAxis);
 
-            if (basic.xyzAlmostZero(this._xAxis)) {
+            if (geo.xyzAlmostZero(this._xAxis)) {
                 this._xAxis.x = 1.0;
             } else {
                 this._xAxis.normalize();
@@ -834,52 +919,52 @@ module mathis {
             res.m[14]=a14
             res.m[15]=a15
         }
-
-        numbersToBabylonMatrix(a0:number,a1:number,a2:number,a3:number,a4:number,a5:number,a6:number,a7:number,a8:number,a9:number,a10:number,a11:number,a12:number,a13:number,a14:number,a15:number,res:BABYLON.Matrix):void{
-            res.m[0]=a0
-            res.m[1]=a1
-            res.m[2]=a2
-            res.m[3]=a3
-            res.m[4]=a4
-            res.m[5]=a5
-            res.m[6]=a6
-            res.m[7]=a7
-            res.m[8]=a8
-            res.m[9]=a9
-            res.m[10]=a10
-            res.m[11]=a11
-            res.m[12]=a12
-            res.m[13]=a13
-            res.m[14]=a14
-            res.m[15]=a15
-        }
-
-
-        MMtoBabylonMatrix(mm:MM,res:BABYLON.Matrix){
-            res.m[0]=mm.m[0]
-            res.m[1]=mm.m[1]
-            res.m[2]=mm.m[2]
-            res.m[3]=mm.m[3]
-            res.m[4]=mm.m[4]
-            res.m[5]=mm.m[5]
-            res.m[6]=mm.m[6]
-            res.m[7]=mm.m[7]
-            res.m[8]=mm.m[8]
-            res.m[9]=mm.m[9]
-            res.m[10]=mm.m[10]
-            res.m[11]=mm.m[11]
-            res.m[12]=mm.m[12]
-            res.m[13]=mm.m[13]
-            res.m[14]=mm.m[14]
-            res.m[15]=mm.m[15]
-        }
-
-        XYZtoBabVector(vect:XYZ,res:BABYLON.Vector3):void{
-            res.x=vect.x
-            res.y=vect.y
-            res.z=vect.z
-
-        }
+        //
+        //numbersToBabylonMatrix(a0:number,a1:number,a2:number,a3:number,a4:number,a5:number,a6:number,a7:number,a8:number,a9:number,a10:number,a11:number,a12:number,a13:number,a14:number,a15:number,res:BABYLON.Matrix):void{
+        //    res.m[0]=a0
+        //    res.m[1]=a1
+        //    res.m[2]=a2
+        //    res.m[3]=a3
+        //    res.m[4]=a4
+        //    res.m[5]=a5
+        //    res.m[6]=a6
+        //    res.m[7]=a7
+        //    res.m[8]=a8
+        //    res.m[9]=a9
+        //    res.m[10]=a10
+        //    res.m[11]=a11
+        //    res.m[12]=a12
+        //    res.m[13]=a13
+        //    res.m[14]=a14
+        //    res.m[15]=a15
+        //}
+        //
+        //
+        //MMtoBabylonMatrix(mm:MM,res:BABYLON.Matrix){
+        //    res.m[0]=mm.m[0]
+        //    res.m[1]=mm.m[1]
+        //    res.m[2]=mm.m[2]
+        //    res.m[3]=mm.m[3]
+        //    res.m[4]=mm.m[4]
+        //    res.m[5]=mm.m[5]
+        //    res.m[6]=mm.m[6]
+        //    res.m[7]=mm.m[7]
+        //    res.m[8]=mm.m[8]
+        //    res.m[9]=mm.m[9]
+        //    res.m[10]=mm.m[10]
+        //    res.m[11]=mm.m[11]
+        //    res.m[12]=mm.m[12]
+        //    res.m[13]=mm.m[13]
+        //    res.m[14]=mm.m[14]
+        //    res.m[15]=mm.m[15]
+        //}
+        //
+        //XYZtoBabVector(vect:XYZ,res:BABYLON.Vector3):void{
+        //    res.x=vect.x
+        //    res.y=vect.y
+        //    res.z=vect.z
+        //
+        //}
 
 
         private  newHermite(value1: XYZ, tangent1: XYZ, value2: XYZ, tangent2: XYZ, amount: number): XYZ {
@@ -984,14 +1069,22 @@ module mathis {
 
         export class CloseXYZfinder{
 
+            nbDistinctPoint=1000
 
-            firstList:XYZ[]
-            secondList:XYZ[]
-            nbDistinctPoint=100000
+            private sourceEqualRecepter:boolean
+            private recepteurList:XYZ[]
+            private sourceList:XYZ[]
 
-            constructor(firstList:XYZ[],secondList:XYZ[]){
-                this.firstList=firstList
-                this.secondList=secondList
+            constructor(recepteurList:XYZ[],sourceList?:XYZ[]){
+                this.recepteurList=recepteurList
+                if(sourceList==null){
+                    this.sourceList=recepteurList
+                    this.sourceEqualRecepter=true
+                }
+                else{
+                    this.sourceList=sourceList
+                    this.sourceEqualRecepter=false
+                }
             }
 
 
@@ -1000,28 +1093,37 @@ module mathis {
                 this.buildScaler()
                 let amplitude=new XYZ(Math.max(1,this.maxs.x-this.mins.x),Math.max(1,this.maxs.y-this.mins.y),Math.max(1,this.maxs.z-this.mins.z) )
 
-                let centersOfFirstList: {[id:string]:number}={}
+                let recepteurBalises: {[id:string]:number}={}
 
 
-                for (let i=0; i<this.firstList.length; i++){
-                    let val=this.firstList[i]
-                    let resx=Math.floor( (val.x-this.mins.x)/amplitude.x*this.nbDistinctPoint)
-                    let resy=Math.floor( (val.y-this.mins.y)/amplitude.y*this.nbDistinctPoint)
-                    let resz=Math.floor( (val.z-this.mins.z)/amplitude.z*this.nbDistinctPoint)
-                    centersOfFirstList[resx+','+resy+','+resz]=i
+                for (let i=0; i<this.recepteurList.length; i++){
+                    let val=this.recepteurList[i]
+                    let resx=Math.round( (val.x-this.mins.x)/amplitude.x*this.nbDistinctPoint)
+                    let resy=Math.round( (val.y-this.mins.y)/amplitude.y*this.nbDistinctPoint)
+                    let resz=Math.round( (val.z-this.mins.z)/amplitude.z*this.nbDistinctPoint)
+                    let key=resx+','+resy+','+resz
+                    if( recepteurBalises[key]==null) recepteurBalises[key]=i
+                    else if (!this.sourceEqualRecepter) logger.c('strange: the recepterList has several XYZ very close. This is, in general, only possible, when recepter equal source')
                 }
 
 
                 let res:{[id:number]:number}={}
 
 
-                for (let i=0; i<this.secondList.length; i++){
-                    let val=this.secondList[i]
-                    let resx=Math.floor( (val.x-this.mins.x)/ amplitude.x*this.nbDistinctPoint)
-                    let resy=Math.floor( (val.y-this.mins.y)/amplitude.y*this.nbDistinctPoint)
-                    let resz=Math.floor( (val.z-this.mins.z)/amplitude.z*this.nbDistinctPoint)
-                    let center=centersOfFirstList[resx+','+resy+','+resz]
-                    if (center!=null && this.firstList[center]!=this.secondList[i] ) res[center]=i
+                for (let i=0; i<this.sourceList.length; i++){
+                    let val=this.sourceList[i]
+                    let resx=Math.round( (val.x-this.mins.x)/ amplitude.x*this.nbDistinctPoint)
+                    let resy=Math.round( (val.y-this.mins.y)/amplitude.y*this.nbDistinctPoint)
+                    let resz=Math.round( (val.z-this.mins.z)/amplitude.z*this.nbDistinctPoint)
+
+                    let baliseIndex=recepteurBalises[resx+','+resy+','+resz]
+                    if (baliseIndex!=null   ){
+                        if (this.sourceEqualRecepter){
+                            /**to avoid i-> i when sourceEqualRecepter*/
+                            if (baliseIndex!= i) res[i]=baliseIndex
+                        }
+                        else res[i]=baliseIndex
+                    }
 
                 }
 
@@ -1035,7 +1137,7 @@ module mathis {
 
             private buildScaler(){
 
-                this.firstList.forEach((v:XYZ)=>{
+                this.recepteurList.forEach((v:XYZ)=>{
 
                     if (v.x<this.mins.x) this.mins.x=v.x
                     if (v.y<this.mins.y) this.mins.y=v.y
@@ -1047,7 +1149,21 @@ module mathis {
 
                 })
 
-                cc(this.mins, this.maxs)
+                if (!this.sourceEqualRecepter){
+                    this.sourceList.forEach((v:XYZ)=>{
+
+                        if (v.x<this.mins.x) this.mins.x=v.x
+                        if (v.y<this.mins.y) this.mins.y=v.y
+                        if (v.z<this.mins.z) this.mins.z=v.z
+
+                        if (v.x>this.maxs.x) this.maxs.x=v.x
+                        if (v.y>this.maxs.y) this.maxs.y=v.y
+                        if (v.z>this.maxs.z) this.maxs.z=v.z
+
+                    })
+
+                }
+
 
 
 
@@ -1065,144 +1181,157 @@ module mathis {
         }
 
 
-    }
+
+        export class LineInterpoler{
+
+
+            points:XYZ[]
+            options=new InterpolerStatic.Options()
+
+            constructor( points:XYZ[]){
+                this.points=points
+            }
+
+            checkArgs(){
+                if (this.points==null || this.points.length<2) throw 'too few points'
+            }
+
+            private hermite=new Array<XYZ>()
+
+            go():XYZ[]{
+
+                let smoothLine=new Array<XYZ>()
+
+                if (this.points.length==2){
+                    smoothLine=[]
+                    for (let i=0;i<this.options.nbSubdivisions+1;i++){
+                        let intermediatePoint=new XYZ(0,0,0)
+                        geo.between(this.points[0],this.points[1],i/this.options.nbSubdivisions,intermediatePoint)
+                        smoothLine.push(intermediatePoint)
+                    }
+                    if (this.options.loopLine) smoothLine.push(XYZ.newFrom(this.points[0]))
+                }
+                else if (this.options.interpolationStyle==InterpolerStatic.InterpolationStyle.none) {
+                    smoothLine=[]
+                    this.points.forEach(p=>smoothLine.push(XYZ.newFrom(p)))
+                    if (this.options.loopLine) smoothLine.push(XYZ.newFrom(this.points[0]))
+
+                }
+                else if (this.options.interpolationStyle==InterpolerStatic.InterpolationStyle.hermite){
+                    let tani=XYZ.newZero()
+                    let tanii=XYZ.newZero()
 
 
 
 
 
-   export class LineInterpoler{
+                    //let afterLastIndex= (this.loopLine)? 0 : this.points.length-1
+
+                    let oneStep=(point0,point1,point2,point3)=>{
+                        geo.substract(point1,point0,tani)
+                        geo.substract(point3,point2,tanii)
+                        tani.scale(this.options.ratioTan)
+                        tanii.scale(this.options.ratioTan)
+                        geo.hermiteSpline(point1,tani,point2,tanii,this.options.nbSubdivisions,this.hermite)
+                        this.hermite.forEach((v:XYZ)=>{smoothLine.push(v)})
+                    }
+
+                    let last=this.points.length-1
+
+                    if (!this.options.loopLine) oneStep(this.points[0],this.points[0],this.points[1],this.points[2])
+                    else {
+                        oneStep(this.points[last],this.points[0],this.points[1],this.points[2])
+                    }
+
+                    for (let i=1; i<this.points.length-2; i++){
+                        oneStep(this.points[i-1],this.points[i],this.points[i+1],this.points[i+2])
+                    }
+
+                    if(!this.options.loopLine) {
+                        oneStep(this.points[last-2],this.points[last-1],this.points[last],this.points[last])
+                        smoothLine.push(this.points[last])
+                    }
+                    else {
+                        oneStep(this.points[last-2],this.points[last-1],this.points[last],this.points[0])
+                        oneStep(this.points[last-1],this.points[last],this.points[0],this.points[1])
+                        smoothLine.push(this.points[0])
+                    }
+                }
+                else if (this.options.interpolationStyle==InterpolerStatic.InterpolationStyle.octavioStyle){
+
+                    if (this.points.length==2) return [XYZ.newFrom(this.points[0]),XYZ.newFrom(this.points[1])]
+
+                    let last=this.points.length-1
 
 
-        nbSubdivisions=10
-        ratioTan=0.5
-        points:XYZ[]
-        loopLine=false
-        type:LineInterpoler.type=LineInterpoler.type.hermite
+                    let middle0=XYZ.newZero()
+                    let middle1=XYZ.newZero()
 
 
-        constructor( points:XYZ[]){
-            this.points=points
+                    let oneStep=(point0,point1,point2)=>{
+
+                        geo.between(point0,point1,0.5,middle0)
+                        geo.between(point1,point2,0.5,middle1)
+                        geo.quadraticBezier(middle0,point1,middle1,this.options.nbSubdivisions,this.hermite)
+                        this.hermite.forEach((v:XYZ)=>{smoothLine.push(v)})
+                    }
+
+                    if (!this.options.loopLine){
+                        let begin=XYZ.newFrom(this.points[0])
+                        let second=XYZ.newZero()
+                        geo.between(this.points[0],this.points[1],0.5,second)
+                        smoothLine.push(begin,second)
+                    }
+                    else {
+                        oneStep(this.points[last],this.points[0],this.points[1])
+                    }
+
+                    for (let i=1; i<this.points.length-1; i++){
+                        oneStep(this.points[i-1],this.points[i],this.points[i+1])
+                    }
+
+                    if (!this.options.loopLine){
+                        let end=XYZ.newFrom(this.points[last])
+                        let beforEnd=XYZ.newZero()
+                        geo.between(this.points[last-1],this.points[last],0.5,beforEnd)
+                        smoothLine.push(beforEnd,end)
+                    }
+                    else {
+                        oneStep(this.points[last-1],this.points[last],this.points[0])
+                        /**because bezier do not add the last point*/
+                        let latest=XYZ.newZero()
+                        geo.between(this.points[last],this.points[0],0.5,latest)
+                        smoothLine.push(latest)
+
+                    }
+
+                }
+                else throw 'line interporler style unknown'
+
+
+                return smoothLine
+            }
+
         }
 
-       checkArgs(){
-           if (this.points==null || this.points.length<2) throw 'too few points'
-       }
+        export module InterpolerStatic{
+            //TODO hermiteWithNormalizedTangent : la norme des  tangentes est une proportion de la longueur du segment courant
+            export enum InterpolationStyle{hermite,octavioStyle,none}
 
-        private hermite=new Array<XYZ>()
-
-        go():XYZ[]{
-
-            let smoothLine=new Array<XYZ>()
-
-            if (this.type==LineInterpoler.type.hermite){
-                let tani=XYZ.newZero()
-                let tanii=XYZ.newZero()
-
-
-                if (this.points.length==2) return [this.points[0].newCopy(),this.points[1].newCopy()]
-
-
-                //let afterLastIndex= (this.loopLine)? 0 : this.points.length-1
-
-                let oneStep=(point0,point1,point2,point3)=>{
-                    geo.substract(point1,point0,tani)
-                    geo.substract(point3,point2,tanii)
-                    tani.scale(this.ratioTan)
-                    tanii.scale(this.ratioTan)
-                    geo.hermiteSpline(point1,tani,point2,tanii,this.nbSubdivisions,this.hermite)
-                    this.hermite.forEach((v:XYZ)=>{smoothLine.push(v)})
-                }
-
-                let last=this.points.length-1
-
-                if (!this.loopLine) oneStep(this.points[0],this.points[0],this.points[1],this.points[2])
-                else {
-                    oneStep(this.points[last],this.points[0],this.points[1],this.points[2])
-                }
-
-                for (let i=1; i<this.points.length-2; i++){
-                    oneStep(this.points[i-1],this.points[i],this.points[i+1],this.points[i+2])
-                }
-
-                if(!this.loopLine) {
-                    oneStep(this.points[last-2],this.points[last-1],this.points[last],this.points[last])
-                    smoothLine.push(this.points[last])
-                }
-                else {
-                    oneStep(this.points[last-2],this.points[last-1],this.points[last],this.points[0])
-                    oneStep(this.points[last-1],this.points[last],this.points[0],this.points[1])
-                    smoothLine.push(this.points[0])
-                }
+            export class Options{
+                /** do not put loopLine=true if you have already make a loop with the path to interpolate ! */
+                loopLine=false
+                interpolationStyle:InterpolerStatic.InterpolationStyle=InterpolerStatic.InterpolationStyle.hermite
+                nbSubdivisions=10
+                ratioTan=0.5
             }
-            else if (this.type==LineInterpoler.type.octavioStyle){
 
-                if (this.points.length==2) return [this.points[0].newCopy(),this.points[1].newCopy()]
-
-                let last=this.points.length-1
-
-
-                let middle0=XYZ.newZero()
-                let middle1=XYZ.newZero()
-
-
-                let oneStep=(point0,point1,point2)=>{
-
-                    geo.between(point0,point1,0.5,middle0)
-                    geo.between(point1,point2,0.5,middle1)
-                    geo.quadraticBezier(middle0,point1,middle1,this.nbSubdivisions,this.hermite)
-                    this.hermite.forEach((v:XYZ)=>{smoothLine.push(v)})
-                }
-
-                if (!this.loopLine){
-                    let begin=XYZ.newFrom(this.points[0])
-                    let second=XYZ.newZero()
-                    geo.between(this.points[0],this.points[1],0.5,second)
-                    smoothLine.push(begin,second)
-                }
-                else {
-                    oneStep(this.points[last],this.points[0],this.points[1])
-                }
-
-                for (let i=1; i<this.points.length-1; i++){
-                    oneStep(this.points[i-1],this.points[i],this.points[i+1])
-                }
-
-                if (!this.loopLine){
-                    let end=XYZ.newFrom(this.points[last])
-                    let beforEnd=XYZ.newZero()
-                    geo.between(this.points[last-1],this.points[last],0.5,beforEnd)
-                    smoothLine.push(beforEnd,end)
-                }
-                else {
-                    oneStep(this.points[last-1],this.points[last],this.points[0])
-                    /**because bezier do not add the last point*/
-                    let latest=XYZ.newZero()
-                     geo.between(this.points[last],this.points[0],0.5,latest)
-                    smoothLine.push(latest)
-
-                }
-
-            }
-            else if (this.type==LineInterpoler.type.none){
-                smoothLine=[]
-                this.points.forEach(p=>smoothLine.push(XYZ.newFrom(p)))
-                if (this.loopLine) {
-                    smoothLine.push(this.points[0].newCopy())
-                }
-            }
-            else throw 'line interporler style unknown'
-
-
-            return smoothLine
         }
-
     }
 
-    export module LineInterpoler{
-        //TODO hermiteWithNormalizedTangent : la norme des  tangentes est une proportion de la longueur du segment courant
-        export enum type{hermite,octavioStyle,none}
-    }
+
+
+
 
 
 
