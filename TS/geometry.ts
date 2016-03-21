@@ -52,7 +52,7 @@ module mathis {
             return vec1.x == vec2.x && vec1.y == vec2.y && vec1.z == vec2.z
         }
 
-        epsilon = 0.001
+        epsilon = 0.00001
 
         xyzAlmostEquality(vec1:XYZ, vec2:XYZ) {
             return Math.abs(vec1.x - vec2.x) < this.epsilon && Math.abs(vec1.y - vec2.y) < this.epsilon && Math.abs(vec1.z - vec2.z) < this.epsilon
@@ -487,46 +487,93 @@ module mathis {
         /**a and b must be orthogonal
          * c and d must be orthogonal*/
 
-        private tempVa=new XYZ(0,0,0)
-        private tempVb=new XYZ(0,0,0)
-        private tempVc=new XYZ(0,0,0)
-        private tempVd=new XYZ(0,0,0)
-        private tempVbb=new XYZ(0,0,0)
-        private tempMatrix1=new MM()
-        private cross1=new XYZ(0,0,0)
-        private cross2=new XYZ(0,0,0)
+        //private tempVa=new XYZ(0,0,0)
+        //private tempVb=new XYZ(0,0,0)
+        //private tempVc=new XYZ(0,0,0)
+        //private tempVd=new XYZ(0,0,0)
+        //private tempVbb=new XYZ(0,0,0)
+        //private tempMatrix1=new MM()
+        //private cross1=new XYZ(0,0,0)
+        //private cross2=new XYZ(0,0,0)
+        //
+        //private quaternion1=new XYZW(0,0,0,0)
+        //private quaternion2=new XYZW(0,0,0,0)
+        //
+        //aQuaternionMovingABtoCD(a:XYZ,b:XYZ,c:XYZ,d:XYZ,result:XYZW):void{
+        //    /**saving, and normalising*/
+        //    this.tempVa.copyFrom(a).normalize();
+        //    this.tempVb.copyFrom(b).normalize();
+        //    this.tempVc.copyFrom(c).normalize();
+        //    this.tempVd.copyFrom(d).normalize();
+        //
+        //    /**first rotation*/
+        //    this.cross(this.tempVa,this.tempVc,this.cross1)
+        //    var angle1=this.angleBetweenTwoVectors(a,b) //Math.acos(this.dot(a, c))
+        //    this.axisAngleToQuaternion(this.cross1,angle1,this.quaternion1)
+        //    this.axisAngleToMatrix(this.cross1,angle1,this.tempMatrix1)
+        //
+        //    /**we have to transform tempVb */
+        //    this.multiplicationMatrixVector(this.tempMatrix1,this.tempVb,this.tempVbb)
+        //
+        //    /**second rotation*/
+        //    this.cross(this.tempVbb,this.tempVd,this.cross2)
+        //    var angle2=Math.acos(this.dot(this.tempVbb,this.tempVd))
+        //    this.axisAngleToQuaternion(this.cross2,angle2,this.quaternion2)
+        //
+        //    this.quaternionMultiplication(this.quaternion1,this.quaternion2,result)
+        //
+        //
+        //}
 
-        private quaternion1=new XYZW(0,0,0,0)
-        private quaternion2=new XYZW(0,0,0,0)
 
-        aQuaternionMovingABtoCD(a:XYZ,b:XYZ,c:XYZ,d:XYZ,result:XYZW):void{
-            /**saving, and normalising*/
-            this.tempVa.copyFrom(a).normalize();
-            this.tempVb.copyFrom(b).normalize();
-            this.tempVc.copyFrom(c).normalize();
-            this.tempVd.copyFrom(d).normalize();
+        matt1=new MM()
+        matt2=new MM()
+        oor1=new XYZ(0,0,0)
+        oor2=new XYZ(0,0,0)
+        copA=new XYZ(0,0,0)
+        copB=new XYZ(0,0,0)
+        copC=new XYZ(0,0,0)
+        copD=new XYZ(0,0,0)
 
-            /**first rotation*/
-            this.cross(this.tempVa,this.tempVc,this.cross1)
-            var angle1=Math.acos(this.dot(a, c))
-            this.axisAngleToQuaternion(this.cross1,angle1,this.quaternion1)
-            this.axisAngleToMatrix(this.cross1,angle1,this.tempMatrix1)
+        anOrthogonalMatrixMovingABtoCD(a:XYZ,b:XYZ,c:XYZ,d:XYZ,result:MM,argsAreOrthonormal=false):void{
 
-            /**we have to transform tempVb */
-            this.multiplicationMatrixVector(this.tempMatrix1,this.tempVb,this.tempVbb)
+            if (argsAreOrthonormal){
+                this.copA.copyFrom(a)
+                this.copB.copyFrom(b)
+                this.copC.copyFrom(c)
+                this.copD.copyFrom(d)
 
-            /**second rotation*/
-            this.cross(this.tempVbb,this.tempVd,this.cross2)
-            var angle2=Math.acos(this.dot(this.tempVbb,this.tempVd))
-            this.axisAngleToQuaternion(this.cross2,angle2,this.quaternion2)
+            }
+            else {
+                this.orthonormalizeKeepingFirstDirection(a,b,this.copA,this.copB)
+                this.orthonormalizeKeepingFirstDirection(c,d,this.copC,this.copD)
+            }
 
-            this.quaternionMultiplication(this.quaternion2,this.quaternion1,result)
+            this.cross(this.copA,this.copB,this.oor1)
+            this.matrixFromLines(this.copA,this.copB,this.oor1,this.matt1)
 
+            this.cross(this.copC,this.copD,this.oor2)
+            this.matrixFromLines(this.copC,this.copD,this.oor2,this.matt2)
 
+            this.transpose(this.matt1,this.matt1)
+
+            this.multiplyMatMat(this.matt1,this.matt2,result)
         }
 
 
-        slerp(left:XYZW, right:XYZW, amount:number, result:XYZW):void {
+
+        matBefore=new MM()
+        aQuaternionMovingABtoCD(a:XYZ,b:XYZ,c:XYZ,d:XYZ,result:XYZW,argsAreOrthonormal=false):void{
+            this.anOrthogonalMatrixMovingABtoCD(a,b,c,d,this.matBefore,argsAreOrthonormal)
+            this.matrixToQuaternion(this.matBefore,result)
+        }
+
+
+
+
+
+
+            slerp(left:XYZW, right:XYZW, amount:number, result:XYZW):void {
             var num2;
             var num3;
             var num = amount;
@@ -588,14 +635,12 @@ module mathis {
                 return 0;
             }
 
-
             this.substract(v1,center,this.v1nor)
             this.substract(v2,center,this.v2nor)
 
             this.normalize(v1,this.v1nor)
             this.normalize(v2,this.v2nor)
             var dotProduct=this.dot(this.v1nor,this.v2nor)
-
 
 
             /**because normalisations can be imperfect*/

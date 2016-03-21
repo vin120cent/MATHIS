@@ -8,12 +8,9 @@ module mathis{
 
 
 
-        export enum StickingMode{simple,inverse,none}
-
         export class Rectangle{
-            nbX=4
+            nbX=3
             nbY=3
-
             minX=0
             maxX=1
             minY=0
@@ -21,19 +18,15 @@ module mathis{
 
             protected mamesh:Mamesh
 
-            makeLinks=false
-            addSquare=true
+            makeLinks=true
+            addTriangleOrSquare=true
 
-            borderStickingVertical=StickingMode.none
-            borderStickingHorizontal=StickingMode.none
 
             nbVerticalDecays=0
             nbHorizontalDecays=0
 
 
-
-
-            holeParameters= new Array<XYZ>()
+            holeParameters:XYZ[]=[]
 
             protected paramIsHole(param:XYZ):boolean{
                 for (let i in this.holeParameters) {
@@ -45,260 +38,11 @@ module mathis{
 
             }
 
-            //
-            //public stickingFunction: (i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number} =null
-
 
             constructor( mamesh:Mamesh){
                 this.mamesh=mamesh
             }
 
-            //
-            //private buildStickingFunction():(i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number}{
-            //
-            //    let resFunction= (i,j,nbX,nbY)=>{
-            //        let iRes=null
-            //        let jRes=null
-            //
-            //        if (j>=0 && j<nbY && i>=0 && i<nbX  ){
-            //            iRes=i
-            //            jRes=j
-            //            return {i:iRes,j:jRes}
-            //        }
-            //
-            //        if (this.borderStickingVertical==StickingMode.simple){
-            //
-            //            if (i==-1){
-            //                iRes=nbX-1
-            //                jRes=modulo(j,nbY)
-            //            }
-            //
-            //
-            //        }
-            //
-            //
-            //
-            //
-            //
-            //
-            //
-            //        if (i==-1) iRes=nbX-1
-            //        else if (i==nbX) iRes=0
-            //        else if (i>=0 && i<nbX) iRes=i
-            //
-            //        if (j==-1) jRes=nbY-1
-            //        else if (j==nbY) jRes=0
-            //        else if (j>=0 && j<nbY) jRes=j
-            //
-            //        return {i:iRes,j:jRes}
-            //
-            //    }
-            //
-            //
-            //    return resFunction
-            //
-            //
-            //}
-            //
-            //
-            //private buildStickingFunction(verticalMode:StickingMode,horizontalMode:StickingMode):(i:number,j:number,nbX:number,nbY:number)=>{i:number;j:number}{
-            //
-            //    let resFunction=null
-            //
-            //
-            //    if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.simple  ){
-            //
-            //        resFunction= (i,j,nbX,nbY)=>{
-            //            let iRes=null
-            //            let jRes=null
-            //
-            //            if (i==-1) iRes=nbX-1
-            //            else if (i==nbX) iRes=0
-            //            else if (i>=0 && i<nbX) iRes=i
-            //
-            //            if (j==-1) jRes=nbY-1
-            //            else if (j==nbY) jRes=0
-            //            else if (j>=0 && j<nbY) jRes=j
-            //
-            //            return {i:iRes,j:jRes}
-            //
-            //        }
-            //
-            //    }
-            //    else if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.none  ){
-            //
-            //        resFunction= (i,j,nbX,nbY)=>{
-            //            let iRes=null
-            //            let jRes=null
-            //
-            //            if (j>=0 && j<nbY) jRes=j
-            //
-            //            if (i==-1) iRes=nbX-1
-            //            else if (i==nbX) iRes=0
-            //            else if (i>=0 && i<nbX) iRes=i
-            //
-            //            return {i:iRes,j:jRes}
-            //
-            //        }
-            //
-            //    }
-            //
-            //    else if (verticalMode==StickingMode.simple && horizontalMode==StickingMode.inverse  ){
-            //
-            //        resFunction= (i,j,nbX,nbY)=>{
-            //            let iRes=null
-            //            let jRes=null
-            //
-            //            if (j>=0 && j<nbY){
-            //
-            //                if (i==-1) iRes=nbX-1
-            //                else if (i==nbX) iRes=0
-            //                else if (i>=0 && i<nbX) iRes=i
-            //            }
-            //
-            //            else {
-            //
-            //                if (j==-1){
-            //                    jRes=nbY-1
-            //
-            //                    if (i<=-1) iRes=null
-            //                    else if (i>=nbX) iRes=null
-            //                    else iRes= nbX-1-i
-            //                }
-            //                else if (j==nbY){
-            //                    jRes=0
-            //                    if (i<=-1) iRes=null
-            //                    else if (i>=nbX) iRes=null
-            //                    else iRes= nbX-1-i
-            //                }
-            //
-            //            }
-            //
-            //
-            //            return {i:iRes,j:jRes}
-            //
-            //        }
-            //
-            //    }
-            //    else if (verticalMode==StickingMode.none && horizontalMode==StickingMode.inverse  ){
-            //
-            //        resFunction= (i,j,nbX,nbY)=>{
-            //            let iRes=null
-            //            let jRes=null
-            //
-            //            if (j>=0 && j<nbY && i>=0 && i<nbX  ){
-            //                    iRes=i
-            //                    jRes=j
-            //            }
-            //            else {
-            //
-            //                if (j==-1){
-            //                    jRes=nbY-1
-            //
-            //                    if (i<=-1) iRes=null
-            //                    else if (i>=nbX) iRes=null
-            //                    else iRes= nbX-1-i
-            //                }
-            //                else if (j==nbY){
-            //                    jRes=0
-            //                    if (i<=-1) iRes=null
-            //                    else if (i>=nbX) iRes=null
-            //                    else iRes= nbX-1-i
-            //                }
-            //
-            //            }
-            //
-            //
-            //            return {i:iRes,j:jRes}
-            //
-            //        }
-            //
-            //    }
-            //    else if (verticalMode==StickingMode.none && horizontalMode==StickingMode.none  ){
-            //        resFunction= (i,j,nbX,nbY)=> {
-            //            let iRes = null
-            //            let jRes = null
-            //
-            //            if (j >= 0 && j < nbY) {
-            //                if (i >= 0 && i < nbX) {
-            //                    iRes = i
-            //                    jRes = j
-            //                }
-            //            }
-            //            return {i:iRes,j:jRes}
-            //        }
-            //    }
-            //
-            //    //else if (verticalMode==StickingMode.decay && horizontalMode==StickingMode.none  ){
-            //    //    resFunction= (i,j,nbX,nbY)=> {
-            //    //        let iRes = null
-            //    //        let jRes = null
-            //    //
-            //    //        if (j >= 0 && j < nbY && i >= 0 && i < nbX) {
-            //    //                iRes = i
-            //    //                jRes = j
-            //    //
-            //    //        }
-            //    //        else if (i==-1){
-            //    //            if (j>=1 && j<nbY){
-            //    //                iRes=nbX-1
-            //    //                jRes=j-1
-            //    //            }
-            //    //        }
-            //    //        else if (i==nbX){
-            //    //            if (j>=0 && j<nbY-1){
-            //    //                iRes=0
-            //    //                jRes=j+1
-            //    //            }
-            //    //        }
-            //    //
-            //    //
-            //    //        return {i:iRes,j:jRes}
-            //    //    }
-            //    //}
-            //
-            //
-            //
-            //        return resFunction
-            //}
-
-
-            superGo(){
-
-
-                //let sticking=this.buildStickingFunction(this.borderStickingVertical,this.borderStickingHorizontal)
-                //
-                //if (sticking!=null) {
-                //    this.stickingFunction=sticking
-                //
-                //}
-                //else {
-                //
-                //
-                //    sticking=this.buildStickingFunction(this.borderStickingHorizontal,this.borderStickingVertical)
-                //
-                //    if (sticking!=null) this.stickingFunction= (i,j,nbX,nbY)=>{
-                //        let res=sticking(j,i,nbY,nbX)
-                //        return {i:res.j,j:res.i}
-                //    }
-                //    else throw 'this combinaison of border sticking mode is impossible'
-                //
-                //}
-
-
-
-
-
-
-
-                //if (this.borderStickingHorizontal==StickingMode.simple) this.horizontalStickingFunction= (i)=>(i)
-                //else if (this.borderStickingHorizontal==StickingMode.inverse) this.horizontalStickingFunction= (i)=>(this.nbX-i-1)
-                //
-                //
-                //if (this.borderStickingVertical==StickingMode.simple) this.verticalStickingFunction= (i)=>(i)
-                //else if (this.borderStickingVertical==StickingMode.inverse) this.verticalStickingFunction= (i)=>(this.nbY-i-1)
-
-            }
 
             protected paramToVertex:{[id:string]:Vertex}={}
 
@@ -307,52 +51,7 @@ module mathis{
 
             protected getVertex(i:number,j:number):Vertex{
 
-
-                //let iRes=i
-                //let jRes=j
-                //
-                //if (this.borderStickingVertical!=StickingMode.none  && i!=modulo(i,this.nbX) ){
-                //    jRes=this.verticalStickingFunction(j)
-                //    iRes=modulo(iRes,this.nbX)
-                //
-                //    cc('i,iRes',i,iRes)
-                //    cc('j,jRes',j,jRes)
-                //}
-                //
-                //
-                //if (this.borderStickingHorizontal!=StickingMode.none  && j!=modulo(j,this.nbY) ){
-                //    iRes=this.horizontalStickingFunction(i)
-                //    jRes=modulo(j,this.nbY)
-                //}
-
-
-                //let ijRes=this.stickingFunction(i,j,this.nbX,this.nbY)
-
-                let iRes=null
-                let jRes=null
-                if (this.borderStickingVertical!=StickingMode.inverse&& this.borderStickingHorizontal!=StickingMode.inverse){
-                    if (this.borderStickingVertical==StickingMode.none) iRes=i
-                    else if (this.borderStickingVertical==StickingMode.simple) iRes=modulo(i,this.nbX)
-
-                    if (this.borderStickingHorizontal==StickingMode.none) jRes=j
-                    else if (this.borderStickingHorizontal==StickingMode.simple) jRes=modulo(j,this.nbY)
-                }
-                else if (this.borderStickingVertical==StickingMode.inverse && this.borderStickingHorizontal==StickingMode.none){
-                    if (i<0 || i>=this.nbX){
-                        iRes=modulo(i,this.nbX)
-                        jRes=this.nbY -1 - j
-                    }
-                    else {
-                        iRes=i
-                        jRes=j
-                    }
-                }
-
-
-
-
-
-                return this.paramToVertex[iRes+','+jRes]
+                return this.paramToVertex[i+','+j]
 
             }
 
@@ -382,14 +81,6 @@ module mathis{
 
             private checkArgs(){
 
-                if (this.oneMoreVertexInOddLines){
-                    if (this.borderStickingHorizontal!=StickingMode.none) mawarning(' the vertical sticking may be strange')
-                    if (this.borderStickingHorizontal!=StickingMode.none && this.nbY%2!=0) throw 'horizontal sticking impossible with these parameters'
-
-                }
-
-                //if (this.borderStickingHorizontal!=BorderSticking.none && this.nbY%2!=0 ) throw 'nbY must be even to make some horizontal sticking'
-                //if (this.borderStickingVertical!=BorderSticking.none && this.oneMoreVertexInOddLines) throw 'oneMoreVertexInOddLines and borderStickingVertical are incompatible'
             }
 
 
@@ -398,29 +89,10 @@ module mathis{
             go(){
 
                 this.checkArgs()
-                this.superGo()
-
-                var cellId = 0;
 
 
-
-
-                //var max = Math.max(this.nbX+1, this.nbY);
-                //var ecart =1/(max-1)
-
-
-                let positionPerhapsModulo=(x:number)=>{
-                    if (this.borderStickingVertical==StickingMode.none) return x
-                    if (x<0) return this.maxX-this.minX+x
-                    else return x
-                }
-
-
-                let addX=(this.borderStickingVertical!=StickingMode.none)?1:0
-                let addY=(this.borderStickingHorizontal!=StickingMode.none)?1:0
-
-                let deltaX=(this.maxX-this.minX)/(this.nbX-1+addX)
-                let deltaY=(this.maxY-this.minY)/(this.nbY-1+addY)
+                let deltaX=(this.maxX-this.minX)/(this.nbX-1)
+                let deltaY=(this.maxY-this.minY)/(this.nbY-1)
 
                 for (var j = 0; j < this.nbY; j++) {
 
@@ -438,16 +110,13 @@ module mathis{
                                 let currentVertDecay= (this.nbVerticalDecays==0)? 0 : i*deltaX/(this.maxX-this.minX)*this.nbVerticalDecays*deltaY
 
 
-                                let vertex = graphManip.addNewVertex(this.mamesh.vertices, cellId)
+                                let vertex = this.mamesh.newVertex(0)
                                 vertex.param = param
-                                vertex.position = basic.newXYZ(
+                                vertex.position = new XYZ(
                                     i * deltaX - leftDecayForOddLines + this.minX,
                                     (j * deltaY + this.minY)+currentVertDecay,
                                     0)
                                 this.paramToVertex[i + ',' + j] = vertex
-
-
-                                cellId++;
 
 
                                 if (!this.addMarkForHoneyComb || ! this.isHoneyCombCenter(i,j) ) vertex.markers.push(Vertex.Markers.honeyComb)
@@ -540,24 +209,21 @@ module mathis{
                     let i=vertex.param.x
                     let j=vertex.param.y
 
-                    let v:Vertex
-                    let i1,i2:number
-
-                    v=this.getVertex(i,j)
-                    if (v!=null)  i1=v.id
-                    else continue;
-
-                    v=this.getVertex(i+1,j+1)
-                    if (v!=null)  i2=v.id
-                    else continue;
 
 
-                    v=this.getVertex(i,j+1)
-                    if (v!=null)this.mamesh.addATriangle(i1,i2,v.id)
+                    let v1=this.getVertex(i,j)
+                    if (v1==null)  continue
+
+                    let v2=this.getVertex(i+1,j+1)
+                    if (v2==null)  continue
 
 
-                    v=this.getVertex(i+1,j)
-                    if (v!=null)this.mamesh.addATriangle(i1,v.id,i2)
+                    let v3=this.getVertex(i,j+1)
+                    if (v3!=null)this.mamesh.addATriangle(v1,v2,v3)
+
+
+                    let v4=this.getVertex(i+1,j)
+                    if (v4!=null)this.mamesh.addATriangle(v1,v4,v2)
 
 
 
@@ -571,12 +237,14 @@ module mathis{
         }
 
 
-
         export class Cartesian extends Rectangle{
 
-            cornersAreSharp=true
+            markCorner=true
             acceptDuplicateOppositeLinks=true
-            addTrianglesToClose=false
+            quinconce=false
+            triangularLinks=false
+
+
 
             private checkArgs(){
 
@@ -586,25 +254,9 @@ module mathis{
                 if (this.nbY<2) throw 'this.nbY must be >=2'
                 if (this.maxX<=this.minX) throw 'we must have minX<maxX'
                 if (this.maxY<=this.minY) throw 'we must have minY<maxY'
-                if (!this.addSquare && !this.makeLinks) mawarning('few interest if you do not add neither square nor links')
-
-                if (!this.cornersAreSharp){
-                    if (this.borderStickingHorizontal!=StickingMode.none || this.borderStickingVertical!=StickingMode.none) mawarning(' the sticking we delete the links in the corners')
-                }
-
-                if (this.borderStickingVertical!=StickingMode.none && this.nbX==2) throw 'nbX too small for sticking'
-                if (this.borderStickingHorizontal!=StickingMode.none && this.nbY==2) throw 'nbY too small for sticking'
-
+                if (!this.addTriangleOrSquare && !this.makeLinks) logger.c('few interest if you do not add neither square nor links')
 
             }
-
-
-            //private computeDecayVerctor(a,A,b,B):XYZ{
-            //
-            //    if (a==0) return new XYZ(0,b,0)
-            //    let denominator=(A*B-a*b)
-            //    return new XYZ(a*A*B/denominator,a*b*B/denominator,0)
-            //}
 
 
 
@@ -615,18 +267,17 @@ module mathis{
                 return res
             }
 
-            go(){
+
+
+
+            go():void{
 
 
                 this.checkArgs()
-                this.superGo()
 
 
-                let addX=(this.borderStickingVertical!=StickingMode.none)?1:0
-                let addY=(this.borderStickingHorizontal!=StickingMode.none)?1:0
-
-                let deltaX=(this.maxX-this.minX)/(this.nbX-1+addX)
-                let deltaY=(this.maxY-this.minY)/(this.nbY-1+addY)
+                let deltaX=(this.maxX-this.minX)/(this.nbX-1)
+                let deltaY=(this.maxY-this.minY)/(this.nbY-1)
 
 
                 let A=(this.maxX-this.minX)
@@ -636,24 +287,21 @@ module mathis{
                 let preVY=this.computeDecayVector(deltaY,B,deltaX,A,this.nbHorizontalDecays,this.nbVerticalDecays)
                 let VY=new XYZ(preVY.y,preVY.x,0)
 
+                let origine=new XYZ(this.minX,this.minY,0)
 
-                let vertexId=0
                 for (let i=0;i<this.nbX;i++){
                     for (let j=0;j<this.nbY;j++){
                         let param = new XYZ(i, j, 0)
                         if (this.holeParameters==null ||  !this.paramIsHole(param)) {
 
-                            //let currentVertDecay= (this.nbVerticalDecays==0)? 0 : i*deltaX/(this.maxX-this.minX)*this.nbVerticalDecays*deltaY
-                            //let currentHorDecay= (this.nbHorizontalDecays==0)? 0 : j*deltaY/(this.maxY-this.minY)*this.nbHorizontalDecays*deltaX
-
-                            let vertex = graphManip.addNewVertex(this.mamesh.vertices, j * this.nbX + i)
-                            vertex.position =  XYZ.newFrom(VX).scale(i)
+                            let vertex = this.mamesh.newVertex(0)
+                            let decay= (this.quinconce&& j%2==0)? 0.5 : 0
+                            vertex.position =  XYZ.newFrom(VX).scale(i+decay)
                             let ortherDirection=XYZ.newFrom(VY).scale(j)
-                            vertex.position.add(ortherDirection)
+                            vertex.position.add(ortherDirection).add(origine)
 
                             vertex.param=param
                             this.paramToVertex[i + ',' + j] = vertex
-                            vertexId++
 
                         }
                     }
@@ -661,139 +309,42 @@ module mathis{
 
 
 
-                //
-                //if (this.makeLinks){
-                //    for (let i=0;i<this.nbX;i++) {
-                //        for (let j = 0; j < this.nbY; j++) {
-                //
-                //            if (i>0 && i<this.nbX-1){
-                //                this.mamesh.vertices[(i)+(j)*this.nbX].setVoisinCouple(this.mamesh.vertices[(i-1)+(j)*this.nbX],this.mamesh.vertices[(i+1)+(j)*this.nbX])
-                //            }
-                //            else if (i==0) this.mamesh.vertices[(i)+(j)*this.nbX].setVoisinSingle(this.mamesh.vertices[(i+1)+(j)*this.nbX])
-                //            else if (i==this.nbX-1) this.mamesh.vertices[(i)+(j)*this.nbX].setVoisinSingle(this.mamesh.vertices[(i-1)+(j)*this.nbX])
-                //
-                //
-                //            if (j>0 && j<this.nbY-1){
-                //                this.mamesh.vertices[(i)+(j)*this.nbX].setVoisinCouple(this.mamesh.vertices[(i)+(j-1)*this.nbX],this.mamesh.vertices[(i)+(j+1)*this.nbX])
-                //            }
-                //            else if (j==0) this.mamesh.vertices[(i)+(j)*this.nbX].setVoisinSingle(this.mamesh.vertices[(i)+(j+1)*this.nbX])
-                //            else if (j==this.nbY-1) this.mamesh.vertices[(i)+(j)*this.nbX].setVoisinSingle(this.mamesh.vertices[(i)+(j-1)*this.nbX])
-                //        }
-                //    }
-                //
-                //    if (!this.cornersAreSharp){
-                //        this.mamesh.vertices[0].setVoisinCouple(this.mamesh.vertices[1],this.mamesh.vertices[this.nbX],true)
-                //
-                //        this.getVertex(this.nbX-1,0).setVoisinCouple(this.getVertex(this.nbX-1,1),this.getVertex(this.nbX-2,0),true)
-                //
-                //        this.getVertex(0,this.nbY-1).setVoisinCouple(this.getVertex(0,this.nbY-2),this.getVertex(1,this.nbY-1),true)
-                //        this.getVertex(this.nbX-1,this.nbY-1).setVoisinCouple(this.getVertex(this.nbX-1,this.nbY-2),this.getVertex(this.nbX-2,this.nbY-1),true)
-                //
-                //    }
-                //
-                //    if (this.borderStickingVertical!=BorderSticking.none){
-                //        let stickFunction
-                //        if(this.borderStickingVertical==BorderSticking.simple) stickFunction= (i:number)=>{return i}
-                //        else if(this.borderStickingVertical==BorderSticking.inversed) stickFunction= (i:number)=>{return this.nbY-1-i}
-                //
-                //        for (let j = 0; j < this.nbY; j++) {
-                //            this.getVertex(this.nbX - 1, j).setVoisinCouple(this.getVertex(this.nbX - 2, j), this.getVertex(0, stickFunction(j)), true)
-                //            this.getVertex(0, j).setVoisinCouple(this.getVertex(1, j), this.getVertex(this.nbX - 1, stickFunction(j)), true)
-                //        }
-                //    }
-                //
-                //    if (this.borderStickingHorizontal!=BorderSticking.none){
-                //        let stickFunction
-                //        if(this.borderStickingHorizontal==BorderSticking.simple) stickFunction= (i:number)=>{return i}
-                //        else if(this.borderStickingHorizontal==BorderSticking.inversed) stickFunction= (i:number)=>{return this.nbX-1-i}
-                //
-                //        for (let i = 0; i < this.nbX; i++) {
-                //            this.getVertex(i,this.nbY - 1).setVoisinCouple(this.getVertex(i,this.nbY - 2), this.getVertex(stickFunction(i),0), true)
-                //            this.getVertex(i,0).setVoisinCouple(this.getVertex(i,1), this.getVertex(stickFunction(i),this.nbY - 1), true)
-                //        }
-                //    }
-                //
-                //
-                //
-                //}
 
-
-                if (this.cornersAreSharp){
+                if (this.markCorner){
                     let vertex:Vertex
                     vertex=this.getVertex(0,0)
-                    if (vertex!=null)  vertex.isSharpAngle=true
+                    if (vertex!=null)  vertex.markers.push(Vertex.Markers.corner)
                     vertex=this.getVertex(this.nbX-1,this.nbY-1)
-                    if (vertex!=null)  vertex.isSharpAngle=true
+                    if (vertex!=null)  vertex.markers.push(Vertex.Markers.corner)
                     vertex=this.getVertex(0,this.nbY-1)
-                    if (vertex!=null)  vertex.isSharpAngle=true
+                    if (vertex!=null)  vertex.markers.push(Vertex.Markers.corner)
                     vertex=this.getVertex(this.nbX-1,0)
-                    if (vertex!=null)  vertex.isSharpAngle=true
+                    if (vertex!=null)  vertex.markers.push(Vertex.Markers.corner)
                 }
 
 
 
-                if (this.makeLinks) this.linksCreation()
+                if (this.makeLinks) {
+                    this.mamesh.linksOK=true
+                    if (this.triangularLinks) this.linksCreationForTriangle()
+                    else this.linksCreationForSquare()
+                }
 
-                if (this.addSquare) this.squareCreation()
-
-
-
-
-                //if (this.addSquare){
-                //
-                //    for (let i=0;i<this.nbX-1;i++) {
-                //        for (let j = 0; j < this.nbY-1; j++) {
-                //            this.mamesh.addASquare((i)+(j)*this.nbX,(i+1)+(j)*this.nbX,(i+1)+(j+1)*this.nbX,(i)+(j+1)*this.nbX)
-                //        }
-                //    }
-                //
-                //    if (this.borderStickingVertical!=BorderSticking.none){
-                //        let stickFunction
-                //        if(this.borderStickingVertical==BorderSticking.simple) stickFunction= (i:number)=>{return i}
-                //        else if(this.borderStickingVertical==BorderSticking.inversed) stickFunction= (i:number)=>{return this.nbY-1-i}
-                //
-                //        for (let j = 0; j < this.nbY-1; j++) {
-                //           this.mamesh.addASquare(this.getId(this.nbX - 1, j),this.getId(0, stickFunction(j)),this.getId(0, stickFunction(j+1)), this.getId(this.nbX-1,j+1)   )
-                //        }
-                //
-                //    }
-                //    if (this.borderStickingHorizontal!=BorderSticking.none){
-                //        let stickFunction
-                //        if(this.borderStickingHorizontal==BorderSticking.simple) stickFunction= (i:number)=>{return i}
-                //        else if(this.borderStickingHorizontal==BorderSticking.inversed) stickFunction= (i:number)=>{return this.nbY-1-i}
-                //
-                //        for (let i = 0; i < this.nbX-1; i++) {
-                //            this.mamesh.addASquare(this.getId(i+1,this.nbY-1),this.getId( stickFunction(i+1),0), this.getId( stickFunction(i),0), this.getId(i,this.nbY - 1))
-                //        }
-                //
-                //    }
-                //
-                //
-                //
-                //
-                //}
-
+                if (this.addTriangleOrSquare) {
+                    if (this.triangularLinks) this.triangleCreation()
+                    else   this.squareCreation()
+                }
 
             }
 
-            private linksCreation(){
-
-
-                //var checkExistingLinks=(this.borderStickingHorizontal!=StickingMode.none) || (this.borderStickingVertical!=StickingMode.none)
+            private linksCreationForSquare():void{
 
 
                 this.mamesh.vertices.forEach((cell:Vertex)=> {
 
                     {
-                        let decayWhenCrossingBorderRightward=0
-                        let decayWhenCrossingBorderLeftward=0
-                        if (cell.param.x==0) decayWhenCrossingBorderLeftward=(this.borderStickingVertical==StickingMode.inverse)?this.nbVerticalDecays :  -this.nbVerticalDecays
-                        if (cell.param.x==this.nbX-1) decayWhenCrossingBorderRightward=+this.nbVerticalDecays
-
-
-
-                        let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y+decayWhenCrossingBorderRightward);
-                        let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y+decayWhenCrossingBorderLeftward);
+                        let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y)
+                        let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y)
 
                         if (c != null && cc != null) {
                             if (this.acceptDuplicateOppositeLinks) cell.setVoisinCouple(c,cc,false)
@@ -807,14 +358,8 @@ module mathis{
 
                     {
 
-                        let decayWhenCrossingUpward=0
-                        let decayWhenCrossingDownWard=0
-                        if (cell.param.y==0) decayWhenCrossingDownWard=(this.borderStickingHorizontal==StickingMode.inverse)?this.nbHorizontalDecays :  -this.nbHorizontalDecays
-                        if (cell.param.y==this.nbY-1) decayWhenCrossingUpward=+this.nbHorizontalDecays
-
-
-                        let c:Vertex = this.getVertex(cell.param.x +decayWhenCrossingUpward , cell.param.y+1);
-                        let cc:Vertex = this.getVertex(cell.param.x +decayWhenCrossingDownWard , cell.param.y-1);
+                        let c:Vertex = this.getVertex(cell.param.x  , cell.param.y+1);
+                        let cc:Vertex = this.getVertex(cell.param.x  , cell.param.y-1);
 
                         if (c != null && cc != null) {
                             if (this.acceptDuplicateOppositeLinks) cell.setVoisinCouple(c,cc,false)
@@ -835,92 +380,502 @@ module mathis{
 
             private squareCreation(){
 
-                for (let vertex of this.mamesh.vertices){
 
+                for (let i = 0;i<this.nbX-1;i++){
+                    for (let j=0;j<this.nbY-1;j++){
 
+                        let v1=this.getVertex(i,j)
+                        if (v1==null)  continue;
 
+                        let v2=this.getVertex(i+1,j)
+                        if (v2==null) continue;
 
-                    let i=vertex.param.x
-                    let j=vertex.param.y
+                        let v3=this.getVertex(i+1,j+1)
+                        if (v3==null) continue;
 
-                    let rightDecayWhenCrossing=0
-                    if (i==this.nbX-1) rightDecayWhenCrossing=+this.nbVerticalDecays
+                        let v4=this.getVertex(i,j+1)
+                        if (v4==null)  continue;
 
-                    let upDecayWhenCrossing=0
-                    if (j==this.nbY-1) upDecayWhenCrossing=+this.nbHorizontalDecays
-
-
-
-
-                    let v:Vertex
-                    let i1,i2,i3,i4:number
-
-                    v=this.getVertex(i,j)
-                    if (v!=null)  i1=v.id
-                    else continue;
-
-                    v=this.getVertex(i+1,j+rightDecayWhenCrossing)
-                    if (v!=null)  i2=v.id
-                    else continue;
-
-                    v=this.getVertex(i+1+upDecayWhenCrossing,j+1+ rightDecayWhenCrossing)
-                    if (v!=null)  i3=v.id
-                    else continue;
-
-                    v=this.getVertex(i+upDecayWhenCrossing,j+1)
-                    if (v!=null)  i4=v.id
-                    else continue;
-
-                    this.mamesh.addASquare(i1,i2,i3,i4)
-
-                }
-
-
-
-
-                if (this.addTrianglesToClose) {
-
-                    if (this.nbVerticalDecays==1 && this.nbHorizontalDecays ==1) {
-
-                        let v:Vertex
-                        let i1, i2, i3:number
-                        v = this.getVertex(0, this.nbY - 1)
-                        i1 = v.id
-
-                        v = this.getVertex(this.nbHorizontalDecays, 0)
-                        i2 = v.id
-
-                        v = this.getVertex(0, 0)
-                        i3 = v.id
-
-                        this.mamesh.addATriangle(i1, i2, i3)
-
-
-                        v = this.getVertex(this.nbX - 1, 0)
-                        i1 = v.id
-
-                        v = this.getVertex(0, 0)
-                        i2 = v.id
-
-                        v = this.getVertex(0, this.nbVerticalDecays)
-                        i3 = v.id
-
-                        this.mamesh.addATriangle(i1, i2, i3)
-
-
+                        this.mamesh.addASquare(v1,v2,v3,v4)
                     }
-                    else throw 'adding triangle to close is not yet operationnal for such parameters'
                 }
-
-
-
-
-
 
 
 
             }
 
+
+            private linksCreationForTriangle(){
+
+
+                this.mamesh.vertices.forEach((cell:Vertex)=> {
+
+                    {
+                        let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y);
+                        let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y);
+
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
+                    }
+
+                    /**even lines */
+                    if (cell.param.y%2==0){
+                        // sud est - nord ouest
+                        let c:Vertex = this.getVertex(cell.param.x + 1, cell.param.y + 1);
+                        let cc:Vertex = this.getVertex(cell.param.x, cell.param.y - 1);
+
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
+
+
+                        // sud ouest - nord est
+                        c = this.getVertex(cell.param.x, cell.param.y + 1);
+                        cc = this.getVertex(cell.param.x + 1, cell.param.y - 1);
+
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
+
+
+                    }
+                    /**odd lines */
+                    else {
+                        //sud est - nord ouest
+                        let c:Vertex = this.getVertex(cell.param.x, cell.param.y + 1);
+                        let cc:Vertex = this.getVertex(cell.param.x - 1, cell.param.y - 1);
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
+
+                        //sud ouest - nord est
+                        c = this.getVertex(cell.param.x - 1, cell.param.y + 1);
+                        cc = this.getVertex(cell.param.x, cell.param.y - 1);
+                        if (c != null && cc != null) cell.setVoisinCoupleKeepingExistingAtBest(c, cc)
+                        else if (c == null && cc != null) cell.setVoisinSingle(cc,true)
+                        else if (c != null && cc == null) cell.setVoisinSingle(c,true)
+
+                    }
+
+                });
+
+
+                if (this.addTriangleOrSquare) this.triangleCreation()
+
+
+
+            }
+
+
+            private triangleCreation(){
+
+                for (let vertex of this.mamesh.vertices){
+
+                    let i=vertex.param.x
+                    let j=vertex.param.y
+
+
+
+                    let v1=this.getVertex(i,j)
+                    if (v1==null)  continue
+
+                    let v2=this.getVertex(i+1,j+1)
+                    if (v2==null)  continue
+
+
+                    let v3=this.getVertex(i,j+1)
+                    if (v3!=null)this.mamesh.addATriangle(v1,v2,v3)
+
+
+                    let v4=this.getVertex(i+1,j)
+                    if (v4!=null)this.mamesh.addATriangle(v1,v4,v2)
+
+
+
+                }
+
+
+            }
+
+
+        }
+
+
+
+        export class SingleSquare{
+            makeLinks=true
+
+            markCorners=true
+            addALoopLineAround=false
+
+            mamesh:Mamesh
+            constructor(mamesh:Mamesh){this.mamesh=mamesh}
+
+
+            go():void {
+
+                let vert0=this.mamesh.newVertex(0)
+                vert0.position=new XYZ(0,0,0)
+
+                let vert1=this.mamesh.newVertex(0)
+                vert1.position=new XYZ(1,0,0)
+
+                let vert2=this.mamesh.newVertex(0)
+                vert2.position=new XYZ(1,1,0)
+
+                let vert3=this.mamesh.newVertex(0)
+                vert3.position=new XYZ(0,1,0)
+
+
+                //let triangle=new Polygone([vert1,vert2,vert3])
+                //this.mamesh.polygones.push(triangle)
+
+                this.mamesh.addASquare(vert0,vert1,vert2,vert3)
+
+                if (this.markCorners){
+                    vert0.markers.push(Vertex.Markers.corner)
+                    vert1.markers.push(Vertex.Markers.corner)
+                    vert2.markers.push(Vertex.Markers.corner)
+                    vert3.markers.push(Vertex.Markers.corner)
+
+                }
+
+                if (this.makeLinks) {
+                    if (!this.addALoopLineAround) {
+                        vert0.setVoisinSingle(vert1, false)
+                        vert1.setVoisinSingle(vert2, false)
+                        vert2.setVoisinSingle(vert3, false)
+                        vert3.setVoisinSingle(vert0, false)
+
+                        vert0.setVoisinSingle(vert3, false)
+                        vert3.setVoisinSingle(vert2, false)
+                        vert2.setVoisinSingle(vert1, false)
+                        vert1.setVoisinSingle(vert0, false)
+                    }
+                    else{
+                        vert0.setVoisinCouple(vert1,vert3)
+                        vert1.setVoisinCouple(vert2,vert0)
+                        vert2.setVoisinCouple(vert3,vert1)
+                        vert3.setVoisinCouple(vert0,vert2)
+
+                    }
+                    this.mamesh.linksOK = true
+                }
+                else this.mamesh.linksOK=false
+
+            }
+
+        }
+
+
+        export class SingleTriangle {
+            makeLinks = true
+            markCorners=true
+            addALoopLineAround=false
+
+
+            mamesh:Mamesh
+            constructor(mamesh:Mamesh){this.mamesh=mamesh}
+
+
+            go():void {
+
+                let vert0=this.mamesh.newVertex(0)
+                vert0.position=new XYZ(0,0,0)
+
+
+                let vert1=this.mamesh.newVertex(0)
+                vert1.position=new XYZ(0,1,0)
+
+                let vert2=this.mamesh.newVertex(0)
+                vert2.position=new XYZ(1,0,0)
+
+
+                //let triangle=new Polygone([vert1,vert2,vert3])
+                //mesh.polygones.push(triangle)
+
+                this.mamesh.addATriangle(vert0,vert1,vert2)
+
+
+                if (this.markCorners) {
+                    vert0.markers.push(Vertex.Markers.corner)
+                    vert1.markers.push(Vertex.Markers.corner)
+                    vert2.markers.push(Vertex.Markers.corner)
+                }
+
+                if (this.makeLinks) {
+                    if (!this.addALoopLineAround) {
+                        vert0.setVoisinSingle(vert1, false)
+                        vert0.setVoisinSingle(vert2, false)
+                        vert1.setVoisinSingle(vert0, false)
+                        vert1.setVoisinSingle(vert2, false)
+                        vert2.setVoisinSingle(vert0, false)
+                        vert2.setVoisinSingle(vert1, false)
+                    }
+                    else{
+                        vert0.setVoisinCouple(vert1,vert2,false)
+                        vert1.setVoisinCouple(vert2,vert0,false)
+                        vert2.setVoisinCouple(vert0,vert1,false)
+                    }
+
+                    this.mamesh.linksOK = true
+                }
+                else this.mamesh.linksOK=false
+
+            }
+        }
+
+
+
+        export class SingleSquareWithOneDiag {
+            makeLinks = true
+
+            markCorners=true
+            addALoopLineAround=false
+
+            mamesh:Mamesh
+            constructor(mamesh:Mamesh){this.mamesh=mamesh}
+
+
+            go():void {
+
+                let vert0=this.mamesh.newVertex(0)
+                vert0.position=new XYZ(0,0,0)
+
+                let vert1=this.mamesh.newVertex(0)
+                vert1.position=new XYZ(1,0,0)
+
+                let vert2=this.mamesh.newVertex(0)
+                vert2.position=new XYZ(1,1,0)
+
+                let vert3=this.mamesh.newVertex(0)
+                vert3.position=new XYZ(0,1,0)
+
+
+                //let triangle=new Polygone([vert1,vert2,vert3])
+                //this.mamesh.polygones.push(triangle)
+
+                this.mamesh.addATriangle(vert0,vert1,vert3)
+                this.mamesh.addATriangle(vert1,vert2,vert3)
+
+                if (this.markCorners){
+                    vert0.markers.push(Vertex.Markers.corner)
+                    vert1.markers.push(Vertex.Markers.corner)
+                    vert2.markers.push(Vertex.Markers.corner)
+                    vert3.markers.push(Vertex.Markers.corner)
+                }
+
+                if (this.makeLinks) {
+
+                    vert1.setVoisinSingle(vert3)
+                    vert3.setVoisinSingle(vert1)
+
+
+                    if (!this.addALoopLineAround){
+                        vert0.setVoisinSingle(vert1)
+                        vert0.setVoisinSingle(vert3)
+
+                        vert1.setVoisinSingle(vert0)
+                        vert1.setVoisinSingle(vert2)
+
+                        vert2.setVoisinSingle(vert1)
+                        vert2.setVoisinSingle(vert3)
+
+                        vert3.setVoisinSingle(vert0)
+                        vert3.setVoisinSingle(vert2)
+                    }
+                    else{
+                        vert0.setVoisinCouple(vert1,vert3)
+                        vert1.setVoisinCouple(vert2,vert0)
+                        vert2.setVoisinCouple(vert3,vert1)
+                        vert3.setVoisinCouple(vert0,vert2)
+                    }
+
+                    this.mamesh.linksOK = true
+                }
+                else this.mamesh.linksOK=false
+
+            }
+        }
+
+
+        export class SingleSquareWithTwoDiag {
+            makeLinks = true
+
+            markCorners=true
+            addALoopLineAround=false
+
+            mamesh:Mamesh
+            constructor(mamesh:Mamesh){this.mamesh=mamesh}
+
+
+            go():void {
+
+                let vert0=this.mamesh.newVertex(0)
+                vert0.position=new XYZ(0,0,0)
+
+
+                let vert1=this.mamesh.newVertex(0)
+                vert1.position=new XYZ(1,0,0)
+
+                let vert2=this.mamesh.newVertex(0)
+                vert2.position=new XYZ(1,1,0)
+
+                let vert3=this.mamesh.newVertex(0)
+                vert3.position=new XYZ(0,1,0)
+
+                let vert4=this.mamesh.newVertex(0)
+                vert4.position=new XYZ(0.5,0.5,0)
+
+
+                //let triangle=new Polygone([vert1,vert2,vert3])
+                //this.mamesh.polygones.push(triangle)
+
+                this.mamesh.addATriangle(vert0,vert1,vert4)
+                this.mamesh.addATriangle(vert1,vert2,vert4)
+                this.mamesh.addATriangle(vert2,vert3,vert4)
+                this.mamesh.addATriangle(vert4,vert3,vert0)
+
+                if (this.markCorners){
+                    vert0.markers.push(Vertex.Markers.corner)
+                    vert1.markers.push(Vertex.Markers.corner)
+                    vert2.markers.push(Vertex.Markers.corner)
+                    vert3.markers.push(Vertex.Markers.corner)
+
+                }
+
+                if (this.makeLinks) {
+
+                    vert0.setVoisinSingle(vert4)
+                    vert1.setVoisinSingle(vert4)
+                    vert2.setVoisinSingle(vert4)
+                    vert3.setVoisinSingle(vert4)
+                    vert4.setVoisinCouple(vert0, vert2)
+                    vert4.setVoisinCouple(vert1, vert3)
+
+                    if (!this.addALoopLineAround) {
+                        vert0.setVoisinSingle(vert1)
+                        vert0.setVoisinSingle(vert3)
+
+                        vert1.setVoisinSingle(vert0)
+                        vert1.setVoisinSingle(vert2)
+
+
+                        vert2.setVoisinSingle(vert1)
+                        vert2.setVoisinSingle(vert3)
+
+
+                        vert3.setVoisinSingle(vert0)
+                        vert3.setVoisinSingle(vert2)
+                    }
+                    else {
+                        vert0.setVoisinCouple(vert1,vert3)
+                        vert1.setVoisinCouple(vert2,vert0)
+                        vert2.setVoisinCouple(vert3,vert1)
+                        vert3.setVoisinCouple(vert0,vert2)
+                    }
+
+                    this.mamesh.linksOK = true
+                }
+                else this.mamesh.linksOK=false
+
+            }
+        }
+
+
+        export class RegularPolygone{
+            aLoopLineAround=false
+            nbSides:number
+
+            mamesh:Mamesh
+
+            center=new XYZ(1/2,1/2,0)
+            radius=1/2
+
+
+            constructor(mamesh:Mamesh,nbSides){this.mamesh=mamesh;this.nbSides=nbSides}
+
+            go():void {
+
+                this.mamesh.linksOK=true
+
+
+                if (this.nbSides >= 4) {
+
+                    let vert0=this.mamesh.newVertex(0)
+                    vert0.position=XYZ.newFrom(this.center)
+                    for (let i = 0; i < this.nbSides; i++) {
+                        let verti=this.mamesh.newVertex(0)
+                        verti.position=new XYZ( Math.cos(2 * Math.PI * i / this.nbSides - Math.PI / 2) ,  Math.sin(2 * Math.PI * i / this.nbSides - Math.PI / 2) , 0).scale(this.radius).add(this.center)
+                    }
+
+                    for (let i = 1; i < this.nbSides + 1; i++) {
+                        //let triangle=new Polygone([resultMesh.vertices[0],resultMesh.vertices[i],resultMesh.vertices[i % this.nbSides + 1]])
+                        //resultMesh.polygones.push(triangle)
+                        this.mamesh.addATriangle(this.mamesh.vertices[0],this.mamesh.vertices[i],this.mamesh.vertices[i % this.nbSides + 1])
+
+                    }
+
+                    if (this.nbSides%2==0){
+                        for (let i=1;i<=this.nbSides/2;i++){
+                            vert0.setVoisinCouple(this.mamesh.vertices[i],this.mamesh.vertices[i+this.nbSides/2])
+                        }
+                    }
+                    else{
+                        for (let i=1;i<=this.nbSides;i++) vert0.setVoisinSingle(this.mamesh.vertices[i])
+                    }
+
+                    for (let i=1;i<=this.nbSides;i++){
+                        let verti=this.mamesh.vertices[i]
+                        let vertNext=(i==this.nbSides)? this.mamesh.vertices[1]:this.mamesh.vertices[i+1]
+                        let vertPrev=(i==1)? this.mamesh.vertices[this.nbSides]:this.mamesh.vertices[i-1]
+
+                        verti.setVoisinSingle(vert0)
+                        if (this.aLoopLineAround) verti.setVoisinCouple(vertPrev,vertNext)
+                        else{
+                            verti.setVoisinSingle(vertNext)
+                            verti.setVoisinSingle(vertPrev)
+                        }
+                    }
+
+                }
+                else if (this.nbSides == 3) {
+                    for (let i = 0; i < this.nbSides; i++) {
+                        let verti=this.mamesh.newVertex(0)
+                        verti.position=new XYZ(Math.cos(2 * Math.PI * i / this.nbSides - Math.PI / 2) ,  Math.sin(2 * Math.PI * i / this.nbSides - Math.PI / 2) , 0).scale(this.radius).add(this.center)
+                        verti.dichoLevel=0
+                    }
+                    this.mamesh.addATriangle(this.mamesh.vertices[0],this.mamesh.vertices[1],this.mamesh.vertices[2])
+                    let vert0=this.mamesh.vertices[0]
+                    let vert1=this.mamesh.vertices[1]
+                    let vert2=this.mamesh.vertices[2]
+
+                    if (this.aLoopLineAround){
+                        vert0.setVoisinCouple(vert1,vert2)
+                        vert1.setVoisinCouple(vert2,vert0)
+                        vert2.setVoisinCouple(vert0,vert1)
+                    }
+                    else{
+                        vert0.setVoisinSingle(vert1)
+                        vert0.setVoisinSingle(vert2)
+
+                        vert1.setVoisinSingle(vert2)
+                        vert1.setVoisinSingle(vert0)
+
+                        vert2.setVoisinSingle(vert0)
+                        vert2.setVoisinSingle(vert1)
+
+                    }
+
+
+
+                    //let triangle=new Polygone([resultMesh.vertices[0],resultMesh.vertices[1],resultMesh.vertices[2]])
+                    //resultMesh.polygones.push(triangle)
+                }
+
+
+            }
 
 
 
@@ -928,117 +883,8 @@ module mathis{
 
 
 
-        //
-        //export module disk{
-        //
-        //
-        //    export interface Option{
-        //        aLoopLineAround?:boolean
-        //        makeLinks?:boolean
-        //        totalAngle?:number
-        //        closed?:boolean
-        //    }
-        //
-        //
-        //
-        //    export function make(nbSides:number,option:Option):Mamesh{
-        //
-        //        let aLoopLineAround=true
-        //        let duplicateCenter=false
-        //        let makeLinks=false
-        //        let totalAngle=2*Math.PI
-        //        let closed=true
-        //
-        //        if (option!=null){
-        //            if (option.aLoopLineAround!=null) aLoopLineAround=option.aLoopLineAround
-        //            if (option.makeLinks!=null) makeLinks=option.makeLinks
-        //            if (option.totalAngle!=null) totalAngle=option.totalAngle
-        //            if (option.closed!=null) closed=option.closed
-        //
-        //        }
-        //
-        //        if (closed &&  totalAngle!= 2*Math.PI) mawarning("strange : your map is closed, but the total angle : "+totalAngle+" is non 2*PI")
-        //        if (nbSides<4) throw "the number of sides must be larger or equal to 4"
-        //
-        //
-        //
-        //        return null//TODO
-        //
-        //    }
-        //
-        //
-        //
-        //}
-        //
-        //
-        //
-        //export class Spiral{
-        //
-        //    aLoopLineAround=false
-        //    totalAngle=2*Math.PI
-        //    climbingPerTurn=1
-        //    deltaAngle=Math.PI/3
-        //
-        //
-        //    constructor(){
-        //
-        //    }
-        //
-        //     make():Mamesh{
-        //
-        //
-        //
-        //        if (closed &&  this.totalAngle!= 2*Math.PI) mawarning("strange : your map is closed, but the total angle : "+this.totalAngle+" is non 2*PI")
-        //
-        //
-        //        let resultMesh=new Mamesh()
-        //        resultMesh.linksOK=false
-        //
-        //        let a = 1 / 2;
-        //
-        //        let currentId=0
-        //
-        //        let climbingPerIteration= this.climbingPerTurn/Math.PI/2*this.deltaAngle
-        //
-        //        let formerCenterId:number=null
-        //        let formerVertiiId:number=null
-        //        for (let angle = 0; angle < this.totalAngle; angle+=this.deltaAngle) {
-        //
-        //            let vertCenter=graphManip.addNewVertex(resultMesh.vertices,currentId++)
-        //            vertCenter.position=basic.newXYZ(1 / 2, 1 / 2, 0)
-        //
-        //            let verti=graphManip.addNewVertex(resultMesh.vertices,currentId++)
-        //            verti.position=basic.newXYZ(1 / 2 + Math.cos(2 * Math.PI * angle - Math.PI / 2) * a, 1 / 2 + Math.sin(2 * Math.PI * angle - Math.PI / 2) * a, 0)
-        //
-        //            let vertii=graphManip.addNewVertex(resultMesh.vertices,currentId++)
-        //            vertii.position=basic.newXYZ(1 / 2 + Math.cos(2 * Math.PI * (angle+this.deltaAngle) - Math.PI / 2) * a, 1 / 2 + Math.sin(2 * Math.PI * (angle+this.deltaAngle) - Math.PI / 2) * a, 0)
-        //
-        //            if (!this.aLoopLineAround) {
-        //                verti.isSharpAngle=true
-        //                vertii.isSharpAngle=true
-        //            }
-        //
-        //            resultMesh.addATriangle(vertCenter.id,verti.id,vertii.id)
-        //
-        //            if (formerCenterId!=null){
-        //                resultMesh.addASquare(formerCenterId,formerVertiiId,verti.id,vertCenter.id)
-        //            }
-        //
-        //            formerCenterId=vertCenter.id
-        //            formerVertiiId=vertii.id
-        //
-        //        }
-        //
-        //        //for (let vertex of resultMesh.vertices) vertex.dichoLevel=0
-        //
-        //
-        //        return resultMesh
-        //
-        //    }
-        //
-        //
-        //
-        //}
+
+
 
 
 

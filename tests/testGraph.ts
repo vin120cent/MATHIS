@@ -12,15 +12,6 @@ module mathis{
         let bilan=new Bilan(0,0)
 
 
-        {
-
-            let vert1=new Vertex(0)
-
-
-
-
-
-        }
 
 
         return bilan

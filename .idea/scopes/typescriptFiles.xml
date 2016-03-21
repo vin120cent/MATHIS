@@ -1,3 +1,3 @@
 <component name="DependencyValidationManager">
-  <scope name="typescriptFiles" pattern="file[MATHIS]:tests/*||file[MATHIS]:TS/*||file[MATHIS]:testWithBabylon/*" />
+  <scope name="typescriptFiles" pattern="((file[MATHIS]:tests/*||file[MATHIS]:TS/*||file[MATHIS]:testWithBabylon/*)&amp;&amp;!file[MATHIS]:JS/*||file[MATHIS]:mathisGame//*||file[MATHIS]:justBabylonTest//*||file[MATHIS]:siteAgreg//*||file[MATHIS]:testWithJQuery//*||file[MATHIS]:testWithOctavio//*)&amp;&amp;!file[MATHIS]:JS//*" />
 </component>

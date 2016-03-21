@@ -4,6 +4,7 @@
     "removeComments": true,
     "sourceMap": true,
     "out": "JS/MATHIS.js",
-    "declaration":false
+    "declaration":false,
+    "watch":true
   }
 }

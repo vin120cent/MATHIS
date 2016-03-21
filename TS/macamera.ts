@@ -11,13 +11,45 @@ module mathis {
     declare var window;
 
 
-    export class Macamera {
+    export class CamGameo extends GameO{
+
+        grabberGamera:GrabberCamera
+        constructor(grabberGamera:GrabberCamera){
+            super()
+            this.grabberGamera=grabberGamera
+            
+        }
+        
+        pos(){
+            return this.grabberGamera.trueCamPos.position
+        }
+        
+        
+        
+        private third=new XYZ(0,0,0)
+        private _qua=new XYZW(0,0,0,0)
+        private _mat=new MM()
+        quaternion(){
+            geo.cross(this.grabberGamera.trueCamPos.frontDir,this.grabberGamera.trueCamPos.upVector,this.third)
+            geo.matrixFromLines(this.grabberGamera.trueCamPos.frontDir,this.grabberGamera.trueCamPos.upVector,this.third,this._mat)
+            geo.matrixToQuaternion(this._mat,this._qua)
+
+            return this._qua
+        }
+        
+        
+    }
+    
+    
+    export class GrabberCamera {
+
+        viewport:BABYLON.Viewport
 
 
         showPredefinedConsoleLog = false
         //showPointer=false
 
-        currentGrabber=new Macamera.Grabber()
+        currentGrabber=new GrabberCamera.Grabber()
 
 
         forceFreeMode=false
@@ -34,52 +66,53 @@ module mathis {
         keysDown = [40];
         keysLeft = [37];
         keysRight = [39];
+        keysFrontward = [66,78];
+        keysBackward = [32];
 
 
         private tooSmallAngle = 0.001
         private tooBigAngle=0.3
         private cumulatedAngle = 0
 
-        private cursorPositionOnGrabber = basic.newXYZ(0, 0, 0)
-        private cursorPositionOnGrabberOld = basic.newXYZ(0, 0, 0)
+        private cursorPositionOnGrabber = new XYZ(0, 0, 0)
+        private cursorPositionOnGrabberOld = new XYZ(0, 0, 0)
         private angleOfRotationAroundGrabber = 0
-        private axeOfRotationAroundGrabber = basic.newXYZ(0, 0, 0)
+        private axeOfRotationAroundGrabber = new XYZ(0, 0, 0)
 
-        private camDir = basic.newXYZ(0, 0, 0)
-        private oldCamDir = basic.newXYZ(0, 0, 0)
+        private camDir = new XYZ(0, 0, 0)
+        private oldCamDir = new XYZ(0, 0, 0)
 
         private angleForCamRot = 0
-        private axisForCamRot = basic.newXYZ(0, 0, 0)
-
-
+        private axisForCamRot = new XYZ(0, 0, 0)
 
 
         /**un vecteur égal à {@link myNullVector} est considéré comme null
          * cependant, on n' aura pas besoin d' un new pour le réaffecter*/
-        private myNullVector = basic.newXYZ(123, 234, 345)
+        private myNullVector = new XYZ(123, 234, 345)
 
-        private frozonProjectionMatrix = basic.newZeroMat()
-        private frozonViewMatrix = basic.newZeroMat()
+        private frozonProjectionMatrix = new MM()
+        private frozonViewMatrix = new MM()
 
-        private pickingRay = {origin: basic.newXYZ(0, 0, 0), direction: basic.newXYZ(0, 0, 0)}
-
-
-        private aPartOfTheFrontDir = basic.newXYZ(0, 0, 0)
+        private pickingRay = {origin: new XYZ(0, 0, 0), direction: new XYZ(0, 0, 0)}
 
 
-        private whishedCamPos=new Macamera.CamPos()
-        public trueCamPos=new Macamera.CamPos()
+        private aPartOfTheFrontDir = new XYZ(0, 0, 0)
+
+
+        public whishedCamPos=new GrabberCamera.CamPos()
+        public trueCamPos=new GrabberCamera.CamPos()
 
         private scene:Scene
-        private camera:Macamera.Babcamera
+        public  camera:GrabberCamera.BabCamera
 
         private cursorActualStyle:string
 
         private $canvasElement
 
-
+        camGameo:CamGameo
         constructor(scene:Scene) {
             this.scene=scene
+            this.camGameo=new CamGameo(this)
         }
 
 
@@ -92,15 +125,16 @@ module mathis {
 
 
 
-        /**pour indiquer que les old vectors ne sont pas attribués (sans pour autant les nullifier, pour éviter des affectations)*/
-            basic.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
-            basic.copyXYZ(this.myNullVector, this.oldCamDir)
-            this.camera=new Macamera.Babcamera("toto",this.scene,this)
+            /**pour indiquer que les old vectors ne sont pas attribués (sans pour autant les nullifier, pour éviter des affectations)*/
+            geo.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
+            geo.copyXYZ(this.myNullVector, this.oldCamDir)
+            this.camera=new GrabberCamera.BabCamera("toto",this.scene,this)
+            if(this.viewport!=null) this.camera.viewport=this.viewport
             this.whishedCamPos.copyFrom(this.trueCamPos)
 
 
             this.$canvasElement = document.getElementById("renderCanvas");
-            this.toogleCursor('cursorDefault')
+            this.toogleIconCursor('cursorDefault')
 
 
             this.currentGrabber.drawMe(this.scene)
@@ -128,42 +162,50 @@ module mathis {
         }
 
 
-        private _axeForKeyRotation = basic.newXYZ(0, 0, 0)
-        private _additionnalVec = basic.newXYZ(0, 0, 0)
+        private _axeForKeyRotation = new XYZ(0, 0, 0)
+        private _additionnalVec = new XYZ(0, 0, 0)
         private checkForKeyPushed():void {
             if (this._keys.length == 0) return
 
-            basic.copyXyzFromFloat(0, 0, 0, this._axeForKeyRotation)
+            geo.copyXyzFromFloat(0, 0, 0, this._axeForKeyRotation)
 
             for (var index = 0; index < this._keys.length; index++) {
                 var keyCode = this._keys[index];
 
                 if (this.keysLeft.indexOf(keyCode) !== -1) {
-                    basic.copyXYZ(this.whishedCamPos.upVector, this._additionnalVec)
+                    geo.copyXYZ(this.whishedCamPos.upVector, this._additionnalVec)
                     geo.scale(this._additionnalVec, -1, this._additionnalVec)
                     geo.add(this._axeForKeyRotation, this._additionnalVec, this._axeForKeyRotation)
 
-                } else if (this.keysUp.indexOf(keyCode) !== -1) {
+                }
+                if (this.keysUp.indexOf(keyCode) !== -1) {
                     geo.cross(this.whishedCamPos.frontDir, this.whishedCamPos.upVector, this._additionnalVec)
                     geo.add(this._additionnalVec, this._axeForKeyRotation, this._axeForKeyRotation)
-                } else if (this.keysRight.indexOf(keyCode) !== -1) {
-                    basic.copyXYZ(this.whishedCamPos.upVector, this._additionnalVec)
+                }
+                if (this.keysRight.indexOf(keyCode) !== -1) {
+                    geo.copyXYZ(this.whishedCamPos.upVector, this._additionnalVec)
                     geo.add(this._additionnalVec, this._axeForKeyRotation, this._axeForKeyRotation)
-                } else if (this.keysDown.indexOf(keyCode) !== -1) {
+                }
+                if (this.keysDown.indexOf(keyCode) !== -1) {
                     geo.cross(this.whishedCamPos.upVector, this.whishedCamPos.frontDir, this._additionnalVec)
                     geo.add(this._additionnalVec, this._axeForKeyRotation, this._axeForKeyRotation)
                 }
+
+
+                if (this.keysBackward.indexOf(keyCode)!==-1) this.onWheel(-0.1)
+                else if (this.keysFrontward.indexOf(keyCode)!==-1) this.onWheel(0.1)
+
             }
 
             /**it was already appears that the axis was too small : */
-            if (geo.squareNorme(this._axeForKeyRotation)<basic.epsilon) return
+            if (geo.squareNorme(this._axeForKeyRotation)<geo.epsilon) return
 
 
-            //TODO
-            //var alpha = this.interpolationCoefAccordingToCamPosition()
-            //if (alpha < 1 && alpha > 0) this.mixedRotation(this._axeForKeyRotation, this.angleWhenPushKey, this._axeForKeyRotation, this.angleWhenPushKey, alpha)
-            //else if (alpha == 1) this.rotateAroundZero(this._axeForKeyRotation, this.angleWhenPushKey)
-            //else this.rotate(this._axeForKeyRotation, this.angleWhenPushKey)
+            let angle=0.05
+            var alpha = this.currentGrabber.interpolationCoefAccordingToCamPosition(this.whishedCamPos.position)
+            if (alpha < 1 && alpha > 0) this.twoRotations(this._axeForKeyRotation, angle, this._axeForKeyRotation, angle, alpha)
+            else if (alpha == 1) this.rotateAroundCenter(this._axeForKeyRotation, angle,this.currentGrabber.center)
+            else this.rotate(this._axeForKeyRotation, angle)
         }
 
 
@@ -171,30 +213,51 @@ module mathis {
         private freeRotation():void{
             if (this.showPredefinedConsoleLog) console.log('free rotation angle', this.angleForCamRot.toFixed(4))
             this.rotate(this.axisForCamRot, this.angleForCamRot)
-            this.toogleCursor("cursorMove")
+            this.toogleIconCursor("cursorMove")
         }
+
+        private _aQuaternion=new XYZW(0,0,0,1)
         private grabberRotation():void{
             if (this.showPredefinedConsoleLog) console.log('grabber rotation angle', this.angleOfRotationAroundGrabber.toFixed(4))
-            this.rotateAroundCenter(this.axeOfRotationAroundGrabber, this.angleOfRotationAroundGrabber,this.currentGrabber.center)
-            this.toogleCursor("cursorGrabbing")
+
+
+
+            //if (this.currentGrabber.gameoMoveInsteadOfCamera){
+            //
+            //    geo.axisAngleToQuaternion(this.axeOfRotationAroundGrabber,-this.angleOfRotationAroundGrabber,this._aQuaternion)
+            //    //geo.quaternionMultiplication(this.currentGrabber.gameo.locQuaternion,this._aQuaternion,this.currentGrabber.gameo.locQuaternion)
+            //    geo.quaternionMultiplication(this.currentGrabber.secondMesh.rotationQuaternion,this._aQuaternion,this.currentGrabber.secondMesh.rotationQuaternion)
+            //
+            //    geo.quaternionMultiplication(this.currentGrabber.grabberMesh.rotationQuaternion,this._aQuaternion,this.currentGrabber.grabberMesh.rotationQuaternion)
+            //
+            //    //this.currentGrabber.gameo.actualize()
+            //    //cc('locQuaternion',this.currentGrabber.gameo.locQuaternion.toString())
+            //}
+            //else
+                this.rotateAroundCenter(this.axeOfRotationAroundGrabber, this.angleOfRotationAroundGrabber,this.currentGrabber.center)
+
+            this.toogleIconCursor("cursorGrabbing")
         }
+
         private mixedRotation(alpha):void{
             if (this.showPredefinedConsoleLog) console.log('free rotation angle', this.angleForCamRot.toFixed(4), 'grabber rotation angle', this.angleOfRotationAroundGrabber.toFixed(4))
             this.twoRotations(this.axisForCamRot, this.angleForCamRot, this.axeOfRotationAroundGrabber, this.angleOfRotationAroundGrabber, alpha)
-            this.toogleCursor("cursorGrabbing")
+            this.toogleIconCursor("cursorGrabbing")
         }
 
 
 
-        private candidate1=new XYZ(0,0,0)
-        private candidate2=new XYZ(0,0,0)
+        //private candidate1=new XYZ(0,0,0)
+        //private candidate2=new XYZ(0,0,0)
 
         //private temp=XYZ.newZero()
         //private temp2=XYZ.newZero()
 
+        private _babylonRay:BABYLON.Ray=new BABYLON.Ray(new BABYLON.Vector3(0,0,0),new BABYLON.Vector3(0,0,1))
         onPointerMove(actualPointerX:number, actualPointerY:number):void {
 
 
+            //cc('actualPointerX',actualPointerX,actualPointerY)
 
 
             if (!this.pointerIsDown) return
@@ -203,51 +266,55 @@ module mathis {
             var grabberRotationOK = true
             var freeRotationOK = true
 
-            this.createPickingRayWithFrozenCamera(actualPointerX, actualPointerY, this.frozonViewMatrix, this.frozonProjectionMatrix, this.pickingRay)
-            basic.copyXYZ(this.pickingRay.direction, this.camDir)
-
-            //geo.substract(this.pickingRay.origin,this.whishedCamPos.position,this.temp)
-            //geo.normalize(this.temp,this.temp)
-            //geo.normalize(this.pickingRay.direction,this.temp2 )
-            //cc("zero ???? ", geo.dot(this.temp,this.temp2) )
+            this.createPickingRayWithFrozenCamera(actualPointerX, actualPointerY,<MM>this.currentGrabber.grabberMesh.getWorldMatrix() ,
+                  this.frozonViewMatrix,
+               this.frozonProjectionMatrix,
+                this.pickingRay)
+            geo.copyXYZ(this.pickingRay.direction, this.camDir)
 
             /**true also we we are inside the grabber*/
-            var pointerIsOnGrabber = geo.intersectionBetweenRayAndSphereFromRef(this.pickingRay.origin, this.pickingRay.direction, this.currentGrabber.radius, this.currentGrabber.center,this.candidate1,this.candidate2 )
-            geo.closerOf(this.candidate1,this.candidate2,this.whishedCamPos.position,this.cursorPositionOnGrabber)
+            this._babylonRay.direction=this.pickingRay.direction
+            this._babylonRay.origin=this.pickingRay.origin
+            let pickInfo=this.currentGrabber.grabberMesh.intersects(this._babylonRay,false)
+
+            var pointerIsOnGrabber=pickInfo.hit
+
+            //cc('pointerIsOnGrabber',pointerIsOnGrabber)
+
+
+            if (pointerIsOnGrabber){
+                this.cursorPositionOnGrabber.x = pickInfo.pickedPoint.x
+                this.cursorPositionOnGrabber.y = pickInfo.pickedPoint.y
+                this.cursorPositionOnGrabber.z = pickInfo.pickedPoint.z
+            }
+
+
+            //var pointerIsOnGrabber = geo.intersectionBetweenRayAndSphereFromRef(this.pickingRay.origin, this.pickingRay.direction, this.currentGrabber.radius, this.currentGrabber.center,this.candidate1,this.candidate2 )
+            //geo.closerOf(this.candidate1,this.candidate2,this.whishedCamPos.position,this.cursorPositionOnGrabber)
 
 
             let alpha = this.currentGrabber.interpolationCoefAccordingToCamPosition(this.whishedCamPos.position)
-           if (this.showPredefinedConsoleLog) cc('alpha',alpha)
+            if (this.showPredefinedConsoleLog) cc('alpha',alpha)
 
 
             this.cursorPositionOnGrabber.substract(this.currentGrabber.center)
 
 
-            //if (this.showPointer){
-            //    if (pointerIsOnGrabber) {
-            //        geo.copyXYZ(this.cursorPositionOnGrabber, this.pointerWhishedPosition)
-            //        this.pointerMesh.visibility=1
-            //    }
-            //    else {
-            //        this.pointerMesh.visibility=0
-            //    }
-            //}
 
-
-            if (basic.xyzEquality(this.oldCamDir, this.myNullVector)) {
-                basic.copyXYZ(this.camDir, this.oldCamDir)
+            if (geo.xyzEquality(this.oldCamDir, this.myNullVector)) {
+                geo.copyXYZ(this.camDir, this.oldCamDir)
                 freeRotationOK = false
             }
 
 
-            if (basic.xyzEquality(this.cursorPositionOnGrabberOld, this.myNullVector)) {
+            if (geo.xyzEquality(this.cursorPositionOnGrabberOld, this.myNullVector)) {
                 if (pointerIsOnGrabber) {
-                    basic.copyXYZ(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld)
+                    geo.copyXYZ(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld)
                 }
                 grabberRotationOK = false
             }
             else if (!pointerIsOnGrabber) {
-                basic.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
+                geo.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
                 grabberRotationOK = false
             }
 
@@ -266,14 +333,15 @@ module mathis {
                 this.angleOfRotationAroundGrabber = geo.angleBetweenTwoVectors(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld);
                 if (this.angleOfRotationAroundGrabber > this.tooSmallAngle) {
                     geo.cross(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld, this.axeOfRotationAroundGrabber)
+                    this.axeOfRotationAroundGrabber.normalize()
                 }
                 else grabberRotationOK = false
             }
 
-            /**un pansement ici pour une erreur non compris : quand on est proche de la sphére, l'angle de la rotation autour de zéro prend parfois de très grand valeur*/
+            /**un pensement ici pour une erreur non compris : quand on est proche de la sphére, l'angle de la rotation autour de zéro prend parfois de très grand valeur*/
             if(grabberRotationOK && this.angleOfRotationAroundGrabber>this.tooBigAngle){
                 console.log('a too big angle around zero : ignored'+this.angleOfRotationAroundGrabber.toFixed(4))
-                basic.copyXYZ(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld)
+                geo.copyXYZ(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld)
                 return
             }
 
@@ -299,19 +367,19 @@ module mathis {
 
             /**on  affecte les nouvelles positions si l' on vient d' effectuer une rotation
              * Attention, il ne faut pas affecter de nouvelle valeur à chaque fois, sinon les angles ne dépassent jamais les seuils critiques*/
-            if (grabberRotationOK) basic.copyXYZ(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld)
-            if (freeRotationOK)  basic.copyXYZ(this.camDir, this.oldCamDir)
+            if (grabberRotationOK) geo.copyXYZ(this.cursorPositionOnGrabber, this.cursorPositionOnGrabberOld)
+            if (freeRotationOK)  geo.copyXYZ(this.camDir, this.oldCamDir)
 
 
             if (grabberRotationOK) this.cumulatedAngle += this.angleOfRotationAroundGrabber
             if (freeRotationOK) this.cumulatedAngle += this.angleForCamRot
 
             if (this.cumulatedAngle > Math.PI / 12) {
-                basic.copyMat(this.getProjectionMatrix(), this.frozonProjectionMatrix)
-                basic.copyMat(this.getViewMatrix(), this.frozonViewMatrix)
+                geo.copyMat(this.getProjectionMatrix(), this.frozonProjectionMatrix)
+                geo.copyMat(this.getViewMatrix(), this.frozonViewMatrix)
                 this.cumulatedAngle = 0
-                basic.copyXYZ(this.myNullVector, this.oldCamDir)
-                basic.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
+                geo.copyXYZ(this.myNullVector, this.oldCamDir)
+                geo.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
                 if (this.showPredefinedConsoleLog) console.log('nouvelles matrices enregistrées')
             }
 
@@ -319,37 +387,29 @@ module mathis {
         }
 
 
-        private toogleCursor(style:string){
+        private toogleIconCursor(style:string){
 
-                if (this.cursorActualStyle!=style){
-                    this.$canvasElement.className=style
-                    //this.$canvasElement.className += "cursorGrabbing";
-                    this.cursorActualStyle=style
-                }
+            if (this.cursorActualStyle!=style){
+                this.$canvasElement.className=style
+                //this.$canvasElement.className += "cursorGrabbing";
+                this.cursorActualStyle=style
+            }
 
         }
 
-        private correctionToRecenter = basic.newXYZ(0, 0, 0)
-        public onWheel(delta:number) {
+        private correctionToRecenter = new XYZ(0, 0, 0)
+        public onWheel(delta:number):void {
+
+            if(this.currentGrabber.exteriorMode && delta>0 && geo.distance(this.currentGrabber.center,this.trueCamPos.position)<3*this.currentGrabber.radius  ){
+              return
+            }
 
             this.inertialRadiusOffset += delta;
 
+            //cc('delta',delta)
 
-            // amout <0 when we go backward
-            //when we go backward, we align our vision to zero.
+            /** amout <0 when we go backward. when we go backward, we align our vision to zero.*/
             if (delta < 0) {
-
-
-
-                //this._whishedDir.copyFrom(this.position)
-                //this._whishedDir.scaleInPlace(-1)
-                //this._whishedDir.normalize()
-                //this._whishedUp.copyFrom(this.upVector)
-                //this.mathema3D.orthonormalizeKeepingFirst(this._whishedDir,this._whishedUp)
-                //this.mathema3D.slerpTwoOrthogonalVectors(this.frontDir,this.upVector,this._whishedDir,this._whishedUp,alpha,this.frontDir,this.upVector)
-                //
-                //
-
 
                 var alpha:number = this.currentGrabber.interpolationCoefAccordingToCamPosition(this.whishedCamPos.position);
                 /**modification of alpha. The re-axis must be sufficiently slow */
@@ -357,9 +417,12 @@ module mathis {
                 geo.scale(this.whishedCamPos.frontDir, 1 - alpha, this.aPartOfTheFrontDir)
                 //TODO case where the recenter is not the currentGrabberCenter
                 geo.substract(this.currentGrabber.center,this.whishedCamPos.position,this.correctionToRecenter)
-                geo.normalize(this.correctionToRecenter, this.correctionToRecenter)
-                geo.scale(this.correctionToRecenter, alpha, this.correctionToRecenter)
-                geo.add(this.correctionToRecenter, this.aPartOfTheFrontDir, this.aPartOfTheFrontDir)
+                if (this.correctionToRecenter.lengthSquared()>geo.epsilon){
+                    geo.normalize(this.correctionToRecenter, this.correctionToRecenter)
+                    geo.scale(this.correctionToRecenter, alpha, this.correctionToRecenter)
+                    geo.add(this.correctionToRecenter, this.aPartOfTheFrontDir, this.aPartOfTheFrontDir)
+
+                }
 
 
                 this.changeFrontDir(this.aPartOfTheFrontDir)
@@ -369,29 +432,13 @@ module mathis {
         }
 
 
-        //
-        //private segment=new XYZ(0,0,0)
-        //private doWeRotateArroundGrabber(virtual:Macamera.Grabber):boolean{
-        //    this.segment.copyFrom(this.whishedCamPos.position).substract(virtual.center)
-        //    let l = geo.norme(this.segment)
-        //    if (l< virtual.radius*virtual.endOfMixedMode) return false
-        //    return true
-        //}
-
-
-
-
-
-
-
-
 
         public changeFrontDir(vector:XYZ):void {
             geo.orthonormalizeKeepingFirstDirection(vector, this.whishedCamPos.upVector, this.whishedCamPos.frontDir, this.whishedCamPos.upVector)
         }
 
 
-        private _matrixRotationAroundCam = basic.newZeroMat()
+        private _matrixRotationAroundCam = new MM()
         /**attention, cela ne marche pas si axis=frontDir ou upVector*/
 
         public rotate(axis:XYZ, angle:number):void {
@@ -406,9 +453,8 @@ module mathis {
         }
 
 
-
-        private _matrixRotationAroundZero = basic.newZeroMat()
-        private camRelativePos=basic.newXYZ(0,0,0)
+        private _matrixRotationAroundZero = new MM()
+        private camRelativePos=new XYZ(0,0,0)
         public rotateAroundCenter(axis:XYZ, angle:number,center:XYZ):void {
             geo.axisAngleToMatrix(axis, angle, this._matrixRotationAroundZero)
             geo.multiplicationMatrixVector(this._matrixRotationAroundZero, this.whishedCamPos.frontDir, this.whishedCamPos.frontDir)
@@ -419,7 +465,7 @@ module mathis {
         }
 
         /**copié sur {@link BABYLON.Scene.createPickingRay}  */
-        private  createPickingRayWithFrozenCamera(x:number, y:number, frozenViewMatrix:MM, frozonProjectionMatrix:MM, result:{origin:XYZ;direction:XYZ}):void {
+        private  createPickingRayWithFrozenCamera(x:number, y:number, world:MM, frozenViewMatrix:MM, frozonProjectionMatrix:MM, result:{origin:XYZ;direction:XYZ}):void {
             var engine = this.camera.getEngine();
             var cameraViewport = this.camera.viewport;
             var viewport = cameraViewport.toGlobal(engine);
@@ -428,16 +474,16 @@ module mathis {
             x = x / engine.getHardwareScalingLevel() - viewport.x;
             y = y / engine.getHardwareScalingLevel() - (engine.getRenderHeight() - viewport.y - viewport.height);
 
-            this.createNew(x, y, viewport.width, viewport.height, frozenViewMatrix, frozonProjectionMatrix, result)
+            this.createNew(x, y, viewport.width, viewport.height,world ,frozenViewMatrix, frozonProjectionMatrix, result)
 
         }
 
-        private _tempCN = basic.newXYZ(0, 0, 0)
-        private _end = basic.newXYZ(0, 0, 0)
-        private createNew(x:number, y:number, viewportWidth:number, viewportHeight:number, view:MM, projection:MM, result:{origin:XYZ;direction:XYZ}):void {
+        private _tempCN = new XYZ(0, 0, 0)
+        private _end = new XYZ(0, 0, 0)
+        private createNew(x:number, y:number, viewportWidth:number, viewportHeight:number, world:MM, view:MM, projection:MM, result:{origin:XYZ;direction:XYZ}):void {
 
-            geo.unproject(basic.copyXyzFromFloat(x, y, 0, this._tempCN), viewportWidth, viewportHeight, view, projection, result.origin)
-            geo.unproject(basic.copyXyzFromFloat(x, y, 1, this._tempCN), viewportWidth, viewportHeight, view, projection, this._end)
+            geo.unproject(geo.copyXyzFromFloat(x, y, 0, this._tempCN), viewportWidth, viewportHeight, world, view, projection, result.origin)
+            geo.unproject(geo.copyXyzFromFloat(x, y, 1, this._tempCN), viewportWidth, viewportHeight,world ,view, projection, this._end)
 
             //var start = BABYLON.Vector3.Unproject(new BABYLON.Vector3(x, y, 0), viewportWidth, viewportHeight, world, view, projection);
             //var end = BABYLON.Vector3.Unproject(new BABYLON.Vector3(x, y, 1), viewportWidth, viewportHeight, world, view, projection);
@@ -451,26 +497,28 @@ module mathis {
         public onPointerDown() {
 
             this.pointerIsDown=true
-            console.log('pointer down')
             /**on glace ces matrices pour éviter les instabilités*/
-            basic.copyMat(this.getProjectionMatrix(), this.frozonProjectionMatrix)
-            basic.copyMat(this.getViewMatrix(), this.frozonViewMatrix)
+            geo.copyMat(this.getProjectionMatrix(), this.frozonProjectionMatrix)
+            geo.copyMat(this.getViewMatrix(), this.frozonViewMatrix)
             this.cumulatedAngle = 0
         }
 
 
         public onPointerUp() {
-            this.toogleCursor('cursorDefault')
+            this.toogleIconCursor('cursorDefault')
             this.pointerIsDown=false
-            basic.copyXYZ(this.myNullVector, this.oldCamDir)
-            basic.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
+            geo.copyXYZ(this.myNullVector, this.oldCamDir)
+            geo.copyXYZ(this.myNullVector, this.cursorPositionOnGrabberOld)
         }
 
         public onKeyDown(evt:any) {
             if (this.keysUp.indexOf(evt.keyCode) !== -1 ||
                 this.keysDown.indexOf(evt.keyCode) !== -1 ||
                 this.keysLeft.indexOf(evt.keyCode) !== -1 ||
-                this.keysRight.indexOf(evt.keyCode) !== -1) {
+                this.keysRight.indexOf(evt.keyCode) !== -1||
+                this.keysBackward.indexOf(evt.keyCode) !== -1||
+                this.keysFrontward.indexOf(evt.keyCode) !== -1)
+            {
                 var index = this._keys.indexOf(evt.keyCode);
 
                 if (index === -1) {
@@ -489,7 +537,9 @@ module mathis {
             if (this.keysUp.indexOf(evt.keyCode) !== -1 ||
                 this.keysDown.indexOf(evt.keyCode) !== -1 ||
                 this.keysLeft.indexOf(evt.keyCode) !== -1 ||
-                this.keysRight.indexOf(evt.keyCode) !== -1) {
+                this.keysRight.indexOf(evt.keyCode) !== -1||
+                this.keysBackward.indexOf(evt.keyCode) !== -1||
+                this.keysFrontward.indexOf(evt.keyCode) !== -1) {
                 var index = this._keys.indexOf(evt.keyCode);
 
                 if (index >= 0) {
@@ -505,17 +555,13 @@ module mathis {
         /**opération lancée à chaque frame
          * allow to simulate inertia : a behaviour which go one after user event
          * */
-        private _deltaPosition = basic.newXYZ(0, 0, 0)
+        private _deltaPosition = new XYZ(0, 0, 0)
 
         public update() {
             this.checkForKeyPushed()
-            if (!this.trueCamPos.almostEqual(this.whishedCamPos))  this.trueCamPos.goCloser(this.whishedCamPos)
-
-            //if (this.showPointer && !geo.xyzAlmostEquality(this.pointerTruePosition,this.pointerWhishedPosition)  ) {
-            //    //geo.between(this.pointerTruePosition,this.pointerWhishedPosition,0.5,this.pointerTruePosition)
-            //    geo.XYZtoBabVector(this.pointerWhishedPosition,this.pointerMesh.position)
-            //}
-
+            //
+             if (!this.trueCamPos.almostEqual(this.whishedCamPos))   this.trueCamPos.goCloser(this.whishedCamPos)
+            //
             if (this.inertialRadiusOffset != 0) {
                 geo.scale(this.whishedCamPos.frontDir, this.inertialRadiusOffset, this._deltaPosition)
                 geo.add(this._deltaPosition, this.whishedCamPos.position, this.whishedCamPos.position)
@@ -537,20 +583,9 @@ module mathis {
         }
 
 
-        //private cachePosition = basic.newXYZ(0, 0, 0)
-        //private cacheUpVector = basic.newXYZ(0, 0, 0)
-        //private cacheFrontDir = basic.newXYZ(0, 0, 0)
-
-
-        //updateCache():void {
-        //    //basic.copyXYZ(this.camera.position, this.cachePosition)
-        //    //basic.copyXYZ(this.camera.upVector, this.cacheUpVector)
-        //    //basic.copyXYZ(this.camera.frontDir, this.cacheFrontDir)
-        //}
 
         isSynchronized():boolean {
             return this.whishedCamPos.almostEqual(this.trueCamPos)
-            //basic.xyzEquality(this.camera.position, this.cachePosition) && basic.xyzEquality(this.camera.upVector, this.cacheUpVector) && basic.xyzEquality(this.camera.frontDir, this.cacheFrontDir)
         }
 
 
@@ -561,13 +596,12 @@ module mathis {
 
 
             var engine = this.camera.getEngine();
-                if (this.camera.minZ <= 0) {
-                    this.camera.minZ = 0.1;
-                }
+            if (this.camera.minZ <= 0) {
+                this.camera.minZ = 0.1;
+            }
 
-                geo.PerspectiveFovLH(this.camera.fov, engine.getAspectRatio(this.camera), this.camera.minZ, this.camera.maxZ, this.projectionMM);
-                return this.projectionMM;
-
+            geo.PerspectiveFovLH(this.camera.fov, engine.getAspectRatio(this.camera), this.camera.minZ, this.camera.maxZ, this.projectionMM);
+            return this.projectionMM;
 
             //var halfWidth = engine.getRenderWidth() / 2.0;
             //var halfHeight = engine.getRenderHeight() / 2.0;
@@ -580,9 +614,12 @@ module mathis {
         private _target=XYZ.newZero()
         public viewMM=new MM()
         public getViewMatrix():MM {
-            basic.copyXYZ(this.trueCamPos.position,this._target)
+            this.camGameo.actualize()
+            //this.trueCamPos.copyFrom(this.whishedCamPos)
+            geo.copyXYZ(this.trueCamPos.position,this._target)
             geo.add(this._target,this.trueCamPos.frontDir,this._target)
             geo.LookAtLH(this.trueCamPos.position,this._target,this.trueCamPos.upVector,this.viewMM)
+
             return this.viewMM;
         }
 
@@ -591,22 +628,27 @@ module mathis {
     }
 
 
-    export module Macamera{
+    export module GrabberCamera{
 
 
         export class CamPos{
-            position:XYZ=basic.newXYZ(0,0,-10)
-            upVector:XYZ=basic.newXYZ(0,1,0)
-            frontDir:XYZ=basic.newXYZ(0,0,1)
+            position:XYZ=new XYZ(0,0,-10)
+            upVector:XYZ=new XYZ(0,1,0)
+            frontDir:XYZ=new XYZ(0,0,1)
+
+            smoothParam=0.5
+
 
             almostEqual(camCarac:CamPos):boolean{
-                return basic.xyzAlmostEquality(this.position,camCarac.position) && basic.xyzAlmostEquality(this.upVector,camCarac.upVector)&&basic.xyzAlmostEquality(this.frontDir,camCarac.frontDir)
+                return geo.xyzAlmostEquality(this.position,camCarac.position) && geo.xyzAlmostEquality(this.upVector,camCarac.upVector)&&geo.xyzAlmostEquality(this.frontDir,camCarac.frontDir)
             }
 
             goCloser(camCarac:CamPos):void{
-                geo.between(camCarac.position,this.position,0.5,this.position)
-                geo.between(camCarac.upVector,this.upVector,0.5,this.upVector)
-                geo.between(camCarac.frontDir,this.frontDir,0.5,this.frontDir)
+
+                //cc('i')
+                geo.between(camCarac.position,this.position,this.smoothParam,this.position)
+                geo.between(camCarac.upVector,this.upVector,this.smoothParam,this.upVector)
+                geo.between(camCarac.frontDir,this.frontDir,this.smoothParam,this.frontDir)
                 //geo.orthonormalizeKeepingFirstDirection()
             }
 
@@ -625,20 +667,35 @@ module mathis {
             center=new XYZ(0,0,0)
             radius=1
 
+            exteriorMode=false
+
             /**proportions*/
             endOfMixedMode=3
             beginOfMixedMode=1.5
 
 
             drawGrabber=false
+            alpha=0.7
+            grabberColor=new BABYLON.Color3(1,1,1)
             grabberMesh:BABYLON.Mesh
+
+
+
+            /**when you want to make moving a gameo instead of the camera*
+             *
+             */
+            //gameo:GameO
+
+
             /** return
              * 0 is we are too close of the wrapper, so we use freeMovement
              * 1 if wee are far, so we use pure wrapping mode
              * between 0 and 1 we can use mixed mode (or not depending to a boolean)
              * */
 
-              interpolationCoefAccordingToCamPosition(cameraPosition:XYZ):number {
+            interpolationCoefAccordingToCamPosition(cameraPosition:XYZ):number {
+                if (this.exteriorMode) return 1
+
                 let l=geo.distance(this.center,cameraPosition)
                 if (l <= this.radius*this.beginOfMixedMode) return 0;
                 if (l >= this.radius*this.endOfMixedMode) return 1;
@@ -647,18 +704,25 @@ module mathis {
             }
 
             checkArgs(){
-                if (this.beginOfMixedMode*1.0001> this.endOfMixedMode  ) throw 'the begin of the mixed mode must be really greater than the end'
+                  if (this.beginOfMixedMode*1.0001> this.endOfMixedMode  ) throw 'the begin of the mixed mode must be really greater than the end'
             }
 
 
             drawMe(scene){
-                if (this.drawGrabber) {
+                //if (this.drawGrabber) {
                     this.grabberMesh = BABYLON.Mesh.CreateSphere("sphere", 10, 2 * this.radius, scene);
-                    geo.XYZtoBabVector(this.center,this.grabberMesh.position)
+                    this.grabberMesh.isPickable=false
+                    this.grabberMesh.position=this.center
+                this.grabberMesh.scaling=new Vector3(this.radius,this.radius,this.radius)
+                    this.grabberMesh.rotationQuaternion=new BABYLON.Quaternion(0,0,0,1)
+                    //geo.XYZtoBabVector(this.center,this.grabberMesh.position)
                     var whiteObsSphereMaterial = new BABYLON.StandardMaterial("texture1", scene)
-                    whiteObsSphereMaterial.alpha = 0.25
+                    whiteObsSphereMaterial.alpha = this.alpha
+                whiteObsSphereMaterial.diffuseColor=this.grabberColor
                     this.grabberMesh.material = whiteObsSphereMaterial
-                }
+
+                if (!this.drawGrabber) this.grabberMesh.visibility=0
+               // }
             }
             showMe(){
                 this.grabberMesh.visibility=1
@@ -670,12 +734,10 @@ module mathis {
 
 
 
-
-
         }
 
 
-      export  class Babcamera extends BABYLON.Camera {
+        export  class BabCamera extends BABYLON.Camera {
 
             /**with @link super.upVector and super.position, this determine the position and the orientation of the camera */
             //public frontDir = new Vector3(0, 0, 1)
@@ -707,14 +769,12 @@ module mathis {
             private eventPrefix = Tools.GetPointerPrefix()
 
 
-            private cameraPilot:Macamera
+            private cameraPilot:GrabberCamera
 
 
 
 
-
-
-            constructor(name:string,   scene:Scene,cameraPilot:Macamera) {
+            constructor(name:string,   scene:Scene,cameraPilot:GrabberCamera) {
 
                 //the vector in this constructor has no effect
                 super(name, new BABYLON.Vector3(0,0,-100), scene);
@@ -751,14 +811,20 @@ module mathis {
                 this.cameraPilot.update()
             }
 
-            /**n' est appelé que si _isSynchronizedViewMatrix renvoi faux */
-            private _viewMatrix = new BABYLON.Matrix()
+            /**n' est appelé que si _isSynchronizedViewMatrix renvoit faux */
+            //private _viewMatrix = new BABYLON.Matrix()
             public _getViewMatrix():Matrix {
-                geo.MMtoBabylonMatrix(this.cameraPilot.getViewMatrix(),this._viewMatrix)
-                return this._viewMatrix;
+                //geo.MMtoBabylonMatrix(this.cameraPilot.getViewMatrix(),this._viewMatrix)
+                //return this._viewMatrix;
+                return this.cameraPilot.getViewMatrix()
             }
 
 
+            private deltaNotToBigFunction(delta:number):number{
+                if (delta>0.1) return 0.1
+                if (delta<-0.1) return -0.1
+                return delta
+            }
             // Methods
             public attachControl(element:HTMLElement, noPreventDefault?:boolean):void {
                 var pointerId;
@@ -807,9 +873,11 @@ module mathis {
                         return;
                     }
 
+                    var rect = element.getBoundingClientRect();
+                    //console.log(rect.top, rect.right, rect.bottom, rect.left);
 
                     /**MATHIS*/
-                    this.cameraPilot.onPointerMove(evt.clientX, evt.clientY)
+                    this.cameraPilot.onPointerMove(evt.clientX-rect.left, evt.clientY-rect.top)
 
                     if (!noPreventDefault) {
                         evt.preventDefault();
@@ -837,9 +905,13 @@ module mathis {
                 this._wheel = event => {
                     var delta = 0;
                     if (event.wheelDelta) {
-                        delta = event.wheelDelta / (this.wheelPrecision * 300);
+                        delta = this.deltaNotToBigFunction(event.wheelDelta / (this.wheelPrecision * 300))
+                        //delta = (event.wheelDelta / (this.wheelPrecision * 300))
+
+
                     } else if (event.detail) {
-                        delta = -event.detail / (this.wheelPrecision * 30);
+                        delta = this.deltaNotToBigFunction(-event.detail / (this.wheelPrecision * 30))
+
                     }
 
                     /**MATHIS*/

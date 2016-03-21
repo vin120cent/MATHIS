@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <title>agreg</title>
+
+    <link rel="stylesheet" href="../CSS/mathisStyle.css" media="all">
+    <link rel="stylesheet" href="../CSS/agreg.css" media="all">
+
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script>-->
+
+</head>
+<body>
+<div>
+When $$a \ne 0$$, there are two solutions to $$ax^2 + bx + c = 0$$ and they are $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
+</div>
+<div id="agregContent">
+    <h1 style="margin-top: 0px"> Le super site de l'agreg </h1>
+    Ici des informations sans importances
+</div>
+
+
+
+<div id="platonic">
+    <canvas  id="renderCanvas"></canvas>
+</div>
+
+
+<!--<script src="../JS/jquery.js"></script>-->
+<script src="../JS/babylon.2.3.js"></script>
+<script src="../JS/MATHIS.js"></script>
+
+<script type="text/javascript">
+
+    var starter=new mathis.MathisFrame(mathis.siteAgreg.sceneAgregCreaFunction)
+    starter.canvasContainer= document.getElementById("platonic")
+    starter.showFPSinCorner=true
+    starter.go()
+
+
+</script>
+
+
+</body>
+</html>

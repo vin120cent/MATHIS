@@ -1,0 +1,88 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+
+body {
+    min-width: 320px;
+    font-size: 15px; /*si on ne précise pas, sur iPad, la police est énorme ???*/
+}
+
+
+
+
+/*#mainDiv{*/
+    /*display: inline-block;*/
+    /*position: relative;*/
+    /*width: 100%;*/
+    /*height: 100%;*/
+/*}*/
+
+
+
+
+
+
+
+
+
+
+
+
+.cursorGrabbing{
+    cursor: pointer;
+}
+.cursorDefault{
+    cursor: default;
+}
+.cursorMove{
+    cursor: move;
+}
+
+
+
+
+
+
+
+
+
+/**default render canvas*/
+#renderCanvas{
+    background-color: lightgrey;
+    width:100%;
+    height: 100%;
+}
+
+
+/*canvas {*/
+    /*display: inline-block;*/
+    /*width: 100%;*/
+    /*height: 100%;*/
+    /*z-index:0;*/
+/*}*/
+
+#info{
+    position: absolute;
+    top:0;
+    left:0;
+    width:100px;
+    height: 20px;
+    background-color: red;
+    z-index: 1000;
+}
+
+
+#noWebGL{
+    position: absolute;
+    top:0;
+    left:0;
+    width:100%;
+    text-align: center;
+    height: 20px;
+    z-index: 1000;
+
+}

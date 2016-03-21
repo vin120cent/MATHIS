@@ -107,11 +107,13 @@ module mathis{
         var bilanGlobal = new Bilan(0, 0)
 
 
-        bilanGlobal.add(basicTest())
         bilanGlobal.add(informatisTest())
         bilanGlobal.add(geometryTest())
-        bilanGlobal.add(surfaceCreatorTest())
-        bilanGlobal.add(flatTest())
+        bilanGlobal.add(testMameshModification())
+        bilanGlobal.add(linkerTest())
+        bilanGlobal.add(testCreation3D())
+
+        //TODO bilanGlobal.add(flatTest())
 
 
         console.log('bilanGlobal',bilanGlobal)
